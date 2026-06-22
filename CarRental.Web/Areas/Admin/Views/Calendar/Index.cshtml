@@ -1,0 +1,341 @@
+@{
+    ViewData["Title"] = "Календарь бронирования";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/fullcalendar/index.global.min.css" />
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+    <style>
+        .fc-event { cursor: pointer; }
+        #bookingTableContainer { max-height: 400px; overflow-y: auto; }
+        
+        /* Стили для flatpickr внутри модалки */
+        .flatpickr-calendar {
+            z-index: 1060 !important;
+            background: #1f2937 !important;
+            border-color: #374151 !important;
+        }
+        .flatpickr-day, .flatpickr-weekday, .flatpickr-month {
+            color: #fff !important;
+        }
+        .flatpickr-day.selected {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+        }
+        .flatpickr-day.disabled {
+            color: #6b7280 !important;
+        }
+    </style>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="fas fa-calendar-alt me-2"></i>@ViewData["Title"]</h1>
+    <button class="btn-primary-modern" data-bs-toggle="modal" data-bs-target="#createBookingModal">
+        <i class="fas fa-plus"></i> Создать бронь
+    </button>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Текущие бронирования</h5>
+            </div>
+            <div class="card-body p-0" id="bookingTableContainer">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Авто</th><th>Период</th><th></th></tr>
+                    </thead>
+                    <tbody id="bookingTableBody">
+                        <tr><td colspan="3" class="text-center">Загрузка......</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания брони -->
+<div class="modal fade" id="createBookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создание бронирования</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBookingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Автомобиль</label>
+                        <div class="input-group">
+                            <input type="text" id="carSearch" class="form-control" placeholder="Введите марку, модель или госномер" autocomplete="off" />
+                            <button class="btn btn-outline-secondary" type="button" id="btnClearCar">Очистить</button>
+                        </div>
+                        <div id="carSearchResults" class="list-group mt-2"></div>
+                        <input type="hidden" id="selectedCarId" name="CarId" />
+                        <div id="selectedCarInfo" class="mt-2 small text-muted"></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Дата начала</label>
+                            <input type="text" id="startDate" name="StartDate" class="form-control" placeholder="Выберите дату" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Дата окончания</label>
+                            <input type="text" id="endDate" name="EndDate" class="form-control" placeholder="Выберите дату" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Клиент (необязательно)</label>
+                        <select id="userId" name="UserId" class="form-select">
+                            <option value="">Без клиента</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select id="status" name="Status" class="form-select">
+                            <option value="1">Подтверждено</option>
+                            <option value="0">На рассмотрении</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Примечания</label>
+                        <textarea id="notes" name="Notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </form>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn-secondary-modern" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" id="btnSubmitBooking" class="btn-primary-modern">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script src="~/lib/fullcalendar/index.global.min.js"></script>
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/ru.js"></script>
+
+    <style>
+        .flatpickr-calendar { z-index: 1060 !important; background: #1f2937 !important; border-color: #374151 !important; }
+        .flatpickr-day, .flatpickr-weekday, .flatpickr-month { color: #fff !important; }
+        .flatpickr-day.selected { background: #3b82f6 !important; border-color: #3b82f6 !important; }
+        .flatpickr-day.disabled { color: #6b7280 !important; }
+    </style>
+
+    <script>
+        (function() {
+            let calendar;
+            let selectedCarData = null;
+            const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            // === 1. Инициализация календаря ===
+            const calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'ru',
+                    height: 'auto',
+                    events: '/Admin/Calendar/GetEvents',
+                    eventClick: function(info) {
+                        // При клике на бронь переходим в детали автомобиля
+                        const carId = info.event.extendedProps.carId;
+                        if (carId) {
+                            window.location.href = '/Admin/Cars/Details/' + carId;
+                        } else {
+                            alert('Автомобиль не найден');
+                        }
+                    },
+                    eventDidMount: function(info) {
+                        // Необязательно: показываем всплывашку с клиентом и статусом
+                        const props = info.event.extendedProps;
+                        info.el.setAttribute('title', `${props.userName || 'Нет клиента'} (${props.status})`);
+                    }
+                });
+                calendar.render();
+                loadBookingList();
+                calendar.on('datesSet', loadBookingList);
+            }
+
+            // === 2. Модальное окно создания брони (без изменений) ===
+            const createModal = document.getElementById('createBookingModal');
+            if (createModal) {
+                createModal.addEventListener('shown.bs.modal', function () {
+                    if (document.getElementById('startDate')._flatpickr) document.getElementById('startDate')._flatpickr.destroy();
+                    if (document.getElementById('endDate')._flatpickr) document.getElementById('endDate')._flatpickr.destroy();
+
+                    flatpickr('#startDate', { dateFormat: 'Y-m-d', locale: 'ru', minDate: 'today', static: true });
+                    flatpickr('#endDate', { dateFormat: 'Y-m-d', locale: 'ru', minDate: 'today', static: true });
+
+                    document.getElementById('carSearch').value = '';
+                    document.getElementById('selectedCarId').value = '';
+                    selectedCarData = null;
+                    document.getElementById('selectedCarInfo').textContent = '';
+                    document.getElementById('carSearchResults').innerHTML = '';
+                });
+            }
+
+            // === Поиск автомобилей ===
+            const carSearch = document.getElementById('carSearch');
+            const carSearchResults = document.getElementById('carSearchResults');
+            const selectedCarId = document.getElementById('selectedCarId');
+            const selectedCarInfo = document.getElementById('selectedCarInfo');
+            let searchTimeout;
+
+            if (carSearch) {
+                carSearch.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    const q = this.value.trim();
+                    if (q.length < 1) { carSearchResults.innerHTML = ''; return; }
+                    searchTimeout = setTimeout(async () => {
+                        try {
+                            const response = await fetch('/Admin/Calendar/SearchCars?q=' + encodeURIComponent(q));
+                            const data = await response.json();
+                            renderCarList(data);
+                        } catch (err) { console.error(err); }
+                    }, 300);
+                });
+            }
+
+            document.getElementById('btnClearCar')?.addEventListener('click', function() {
+                carSearch.value = '';
+                selectedCarId.value = '';
+                selectedCarData = null;
+                selectedCarInfo.textContent = '';
+                carSearchResults.innerHTML = '';
+            });
+
+            // === Создание брони (отправка с CSRF) ===
+            document.getElementById('btnSubmitBooking')?.addEventListener('click', async function() {
+                if (!csrfToken) { alert('CSRF-токен отсутствует'); return; }
+                const carId = selectedCarId.value;
+                if (!carId) { alert('Выберите автомобиль'); return; }
+                const start = document.getElementById('startDate').value;
+                const end = document.getElementById('endDate').value;
+                if (!start || !end) { alert('Выберите даты'); return; }
+                if (new Date(start) >= new Date(end)) { alert('Дата начала должна быть раньше окончания'); return; }
+
+                const startUTC = new Date(start + 'T00:00:00').toISOString();
+                const endUTC = new Date(end + 'T00:00:00').toISOString();
+
+                const model = {
+                    CarId: carId,
+                    UserId: document.getElementById('userId').value || null,
+                    StartDate: startUTC,
+                    EndDate: endUTC,
+                    TotalPrice: null,
+                    Notes: document.getElementById('notes').value,
+                    Status: parseInt(document.getElementById('status').value, 10)
+                };
+
+                try {
+                    const response = await fetch('/Admin/Calendar/CreateBooking', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrfToken },
+                        body: JSON.stringify(model)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(createModal).hide();
+                        calendar.refetchEvents();
+                        loadBookingList();
+                        alert('Бронь создана');
+                    } else {
+                        alert(result.message || 'Ошибка');
+                    }
+                } catch (err) { alert('Ошибка сети'); }
+            });
+
+            // === Удаление брони из таблицы ===
+            document.getElementById('bookingTableBody')?.addEventListener('click', async function(ev) {
+                if (!csrfToken) return;
+                const btn = ev.target.closest('.delete-booking-btn');
+                if (!btn) return;
+                const bookingId = btn.getAttribute('data-id');
+                if (!confirm('Удалить бронь?')) return;
+                try {
+                    const response = await fetch('/Admin/Calendar/DeleteBooking/' + bookingId, {
+                        method: 'POST',
+                        headers: { 'RequestVerificationToken': csrfToken }
+                    });
+                    const res = await response.json();
+                    if (res.success) {
+                        calendar.refetchEvents();
+                        loadBookingList();
+                    } else { alert(res.message); }
+                } catch (err) { alert('Ошибка сети'); }
+            });
+
+            // === Вспомогательные функции ===
+            function renderCarList(cars) {
+                if (!carSearchResults) return;
+                carSearchResults.innerHTML = '';
+                if (!cars.length) { carSearchResults.innerHTML = '<div class="list-group-item text-muted">Ничего не найдено</div>'; return; }
+                cars.forEach(c => {
+                    const item = document.createElement('a');
+                    item.href = '#';
+                    item.className = 'list-group-item list-group-item-action car-item';
+                    item.dataset.id = c.id;
+                    item.innerHTML = `<div class="d-flex align-items-center">
+                        <img src="${c.imageUrl || '/images/no-image.png'}" style="width:50px;height:35px;object-fit:cover;margin-right:10px;" />
+                        <div><strong>${c.brand} ${c.model}</strong><small class="text-muted d-block">${c.licensePlate || 'б/н'} | ${c.year} ${c.color}</small></div>
+                    </div>`;
+                    item.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const car = cars.find(x => x.id == this.dataset.id);
+                        if (car) {
+                            selectedCarData = car;
+                            selectedCarId.value = car.id;
+                            selectedCarInfo.innerHTML = `Выбрано: ${car.brand} ${car.model} (${car.licensePlate}), ${car.year}, ${car.color}`;
+                            carSearch.value = car.brand + ' ' + car.model;
+                            carSearchResults.innerHTML = '';
+                        }
+                    });
+                    carSearchResults.appendChild(item);
+                });
+            }
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '—';
+                const d = dateStr instanceof Date ? dateStr : new Date(dateStr);
+                if (isNaN(d.getTime())) return '—';
+                return `${d.getDate().toString().padStart(2,'0')}.${(d.getMonth()+1).toString().padStart(2,'0')}.${d.getFullYear()}`;
+            }
+
+            async function loadBookingList() {
+                try {
+                    const response = await fetch('/Admin/Calendar/GetEvents');
+                    const events = await response.json();
+                    const tbody = document.getElementById('bookingTableBody');
+                    if (!tbody) return;
+                    if (!events || !events.length) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Нет текущих бронирований</td></tr>';
+                        return;
+                    }
+                    let html = '';
+                    events.slice(0, 20).forEach(e => {
+                        const start = formatDate(e.start);
+                        const end = formatDate(e.end);
+                        html += `<tr>
+                            <td><small>${e.extendedProps?.carInfo || '—'}</small></td>
+                            <td><small>${start} – ${end}</small></td>
+                            <td><button class="btn btn-sm btn-outline-danger delete-booking-btn" data-id="${e.id}"><i class="fas fa-trash"></i></button></td>
+                        </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                } catch (err) { console.error(err); }
+            }
+        })();
+    </script>
+}

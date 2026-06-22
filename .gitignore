@@ -1,0 +1,9 @@
+appsettings.Development.json
+appsettings.Production.json
+*.user
+*.secret
+site-settings.json
+/wwwroot/site-settings.json
+/wwwroot/uploads/
+/wwwroot/temp/
+/wwwroot/templates/contract_template.docx

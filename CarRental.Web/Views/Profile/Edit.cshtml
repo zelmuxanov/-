@@ -1,0 +1,115 @@
+@model CarRental.Web.ViewModels.Profile.EditProfileViewModel
+@{
+    ViewData["Title"] = "Редактирование профиля";
+    Layout = "_Layout";
+}
+
+<div class="container-xxl py-4">
+    <div class="row">
+        <!-- Боковая навигация -->
+        <div class="col-lg-3">
+            <div class="profile-sidebar">
+                <div class="profile-sidebar-header p-3 border-bottom">
+                    <h6 class="mb-0" style="color: var(--text-primary);">Навигация</h6>
+                </div>
+                <div class="profile-sidebar-body">
+                    <a href="@Url.Action("Index", "Profile")" class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fas fa-home profile-nav-icon"></i><span>Обзор</span>
+                    </a>
+                    <a href="@Url.Action("Edit", "Profile")" class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Edit" ? "active" : "")">
+                        <i class="fas fa-user-edit profile-nav-icon"></i><span>Редактировать профиль</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Documents")" class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Documents" ? "active" : "")">
+                        <i class="fas fa-file-contract profile-nav-icon"></i><span>Документы</span>
+                    </a>
+                    <a href="@Url.Action("Bookings", "Profile")" class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Bookings" ? "active" : "")">
+                        <i class="fas fa-calendar profile-nav-icon"></i><span>Мои бронирования</span>
+                    </a>
+                    <a href="@Url.Action("ChangePassword", "Profile")" class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "ChangePassword" ? "active" : "")">
+                        <i class="fas fa-lock profile-nav-icon"></i><span>Смена пароля</span>
+                    </a>
+                    <a href="/Car" class="profile-nav-item-modern">
+                        <i class="fas fa-search profile-nav-icon"></i><span>Найти автомобиль</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="col-lg-9">
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <h2 class="mb-0">👤 Редактирование профиля</h2>
+                </div>
+                <div class="card-body-modern">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form method="post" action="/Profile/Edit">
+                        @Html.AntiForgeryToken()
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Имя *</label>
+                                <input type="text" name="FirstName" class="form-control" value="@Model.FirstName" required />
+                                <span class="text-danger small">@Html.ValidationMessage("FirstName")</span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Фамилия *</label>
+                                <input type="text" name="LastName" class="form-control" value="@Model.LastName" required />
+                                <span class="text-danger small">@Html.ValidationMessage("LastName")</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Отчество</label>
+                            <input type="text" name="MiddleName" class="form-control" value="@Model.MiddleName" />
+                            <span class="text-danger small">@Html.ValidationMessage("MiddleName")</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Номер телефона *</label>
+                            <input type="tel" name="PhoneNumber" class="form-control" value="@Model.PhoneNumber" placeholder="+7 (___) ___-__-__" required />
+                            <span class="text-danger small">@Html.ValidationMessage("PhoneNumber")</span>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="/Profile" class="btn btn-outline-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {    
+            $('#PhoneNumber').inputmask({
+                mask: '+7 (999) 999-99-99',
+                placeholder: '_',
+                clearIncomplete: true
+            });
+        });
+    </script>
+}

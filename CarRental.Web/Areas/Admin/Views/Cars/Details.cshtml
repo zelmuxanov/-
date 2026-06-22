@@ -1,0 +1,238 @@
+@model CarRental.BLL.DTOs.Car.CarDto
+@using CarRental.Domain.Enums
+@{
+    ViewData["Title"] = "Детали автомобиля";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Назад
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Фотография</h5>
+            </div>
+            <div class="card-body text-center">
+                @if (!string.IsNullOrEmpty(Model.MainImageUrl))
+                {
+                    <img src="@Model.MainImageUrl" class="img-thumbnail" style="max-width:300px;" />
+                }
+                else
+                {
+                    <div class="bg-secondary d-flex align-items-center justify-content-center" style="width:300px; height:200px;">
+                        <i class="fas fa-car fa-4x text-muted"></i>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Информация об автомобиле</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Марка:</dt>
+                    <dd class="col-sm-8">@Model.Brand</dd>
+                    
+                    <dt class="col-sm-4">Модель:</dt>
+                    <dd class="col-sm-8">@Model.Model</dd>
+                    
+                    <dt class="col-sm-4">Год выпуска:</dt>
+                    <dd class="col-sm-8">@Model.Year</dd>
+                    
+                    <dt class="col-sm-4">Цвет:</dt>
+                    <dd class="col-sm-8">@Model.Color</dd>
+
+                    <dt class="col-sm-4">Госномер:</dt>
+                    <dd class="col-sm-8">@(Model.LicensePlate ?? "—")</dd>
+
+                    <dt class="col-sm-4">VIN:</dt>
+                    <dd class="col-sm-8">@(Model.VIN ?? "—")</dd>
+                    
+                    <dt class="col-sm-4">Класс:</dt>
+                    <dd class="col-sm-8">@GetCarClassDisplay(Model.Class)</dd>
+                    
+                    <dt class="col-sm-4">Коробка передач:</dt>
+                    <dd class="col-sm-8">@GetTransmissionDisplay(Model.Transmission)</dd>
+                    
+                    <dt class="col-sm-4">Тип топлива:</dt>
+                    <dd class="col-sm-8">@GetFuelTypeDisplay(Model.FuelType)</dd>
+                    
+                    <dt class="col-sm-4">Количество мест:</dt>
+                    <dd class="col-sm-8">@Model.Seats</dd>
+                    
+                    <dt class="col-sm-4">Объем двигателя:</dt>
+                    <dd class="col-sm-8">@Model.EngineCapacity л</dd>
+                    
+                    <dt class="col-sm-4">Цена за сутки:</dt>
+                    <dd class="col-sm-8">@Model.PricePerDay.ToString("N0") ₽</dd>
+
+                    <dt class="col-sm-4">Депозит:</dt>
+                    <dd class="col-sm-8">@Model.Deposit.ToString("N0") ₽</dd>
+
+                    <dt class="col-sm-4">Цена от 15 сут:</dt>
+                    <dd class="col-sm-8">@Model.PricePerDay15.ToString("N0") ₽</dd>
+
+                    <dt class="col-sm-4">Цена от 30 сут:</dt>
+                    <dd class="col-sm-8">@Model.PricePerDay30.ToString("N0") ₽</dd>
+
+                    <dt class="col-sm-4">Лимит пробега (км/сут):</dt>
+                    <dd class="col-sm-8">@Model.MileageLimitPerDay</dd>
+                    
+                    <dt class="col-sm-4">Цена перепробега (₽/км):</dt>
+                    <dd class="col-sm-8">@Model.OverMileagePricePerKm</dd>
+
+                    <dt class="col-sm-4">Цена безлимита (₽/сут):</dt>
+                    <dd class="col-sm-8">@Model.UnlimitedMileagePrice</dd>
+
+                    <dt class="col-sm-4">Госномер:</dt>
+                    <dd class="col-sm-8">@(Model.LicensePlate ?? "—")</dd>
+                    
+                    <dt class="col-sm-4">Статус:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsAvailable)
+                        {
+                            <span class="badge bg-success">Доступен для аренды</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">Недоступен</span>
+                        }
+                    </dd>
+                    
+                    <dt class="col-sm-4">Дата создания:</dt>
+                    <dd class="col-sm-8">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                </dl>
+                
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="mt-4">
+                        <h6>Описание:</h6>
+                        <p class="text-muted">@Model.Description</p>
+                    </div>
+                }
+            </div>
+            <div class="card-footer">
+                <div class="btn-group">
+                    <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn-primary-modern">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn-secondary-modern">
+                        <i class="fas fa-list"></i> К списку
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Календарь занятости -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Календарь занятости</h5>
+    </div>
+    <div class="card-body">
+        <div id="bookingCalendar"></div>
+    </div>
+</div>
+<!-- История бронирований -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">История бронирований</h5>
+    </div>
+    <div class="card-body">
+        <div id="bookingHistory">
+            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetCarClassDisplay(CarClass carClass) => carClass switch
+    {
+        CarClass.Standard => "Стандарт",
+        CarClass.SUV => "Кроссовер",
+        CarClass.Business => "Бизнес",
+        CarClass.Minivan => "Минивэн",
+        _ => carClass.ToString()
+    };
+    string GetFuelTypeDisplay(FuelType fuelType) => fuelType switch
+    {
+        FuelType.Petrol => "Бензин",
+        FuelType.Diesel => "Дизель",
+        FuelType.Hybrid => "Гибрид",
+        _ => fuelType.ToString()
+    };
+    string GetTransmissionDisplay(TransmissionType transmission) => transmission switch
+    {
+        TransmissionType.Manual => "Механика",
+        TransmissionType.Automatic => "Автомат",
+        _ => transmission.ToString()
+    };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/fullcalendar/index.global.min.css" />
+}
+
+@section Scripts {
+    <script src="~/lib/fullcalendar/index.global.min.js"></script>
+    <script src="~/lib/fullcalendar/daygrid.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('bookingCalendar');
+            if (!calendarEl) return;
+            
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ru',
+                events: '/Admin/Cars/GetBookingsForCar/@Model.Id',
+                eventDisplay: 'block',
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: false
+                },
+                eventDidMount: function(info) {
+                    info.el.title = info.event.extendedProps.notes || '';
+                }
+            });
+            calendar.render();
+        });
+        // Загрузка истории бронирований
+        fetch('/Admin/Cars/GetBookingsForCar/@Model.Id')
+            .then(response => response.json())
+            .then(events => {
+                const container = document.getElementById('bookingHistory');
+                if (!events || events.length === 0) {
+                    container.innerHTML = '<p class="text-muted">Бронирований нет</p>';
+                    return;
+                }
+                let html = '<table class="table table-sm table-hover"><thead><tr><th>Клиент</th><th>Период</th><th>Статус</th></tr></thead><tbody>';
+                events.forEach(e => {
+                    const userId = e.extendedProps?.userId || '';
+                    const statusBadge = e.color ? `<span class="badge" style="background:${e.color}">${e.status || ''}</span>` : '';
+                    html += `<tr>
+                        <td><a href="/Admin/Users/Details/${userId}">${e.title || '—'}</a></td>
+                        <td>${e.start} – ${e.end}</td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            })
+            .catch(err => {
+                document.getElementById('bookingHistory').innerHTML = '<p class="text-danger">Ошибка загрузки истории</p>';
+                console.error(err);
+            });
+    </script>
+}

@@ -1,0 +1,45 @@
+<div class="profile-nav">
+    <div class="profile-nav-header">
+        <h6 class="mb-0">Навигация</h6>
+    </div>
+    <div class="profile-nav-items">
+        @{
+            var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+        }
+        
+        <a href="@Url.Action("Index", "Profile")" 
+           class="profile-nav-item @(currentAction == "Index" ? "active" : "")">
+            <i class="fas fa-home"></i>
+            <span>Обзор</span>
+        </a>
+        
+        <a href="@Url.Action("Edit", "Profile")" 
+           class="profile-nav-item @(currentAction == "Edit" ? "active" : "")">
+            <i class="fas fa-user-edit"></i>
+            <span>Редактировать профиль</span>
+        </a>
+        
+        <a href="@Url.Action("Index", "Documents")" 
+           class="profile-nav-item @(currentAction == "Documents" ? "active" : "")">
+            <i class="fas fa-file-alt"></i>
+            <span>Документы</span>
+        </a>
+        
+        <a href="@Url.Action("Bookings", "Profile")" 
+           class="profile-nav-item @(currentAction == "Bookings" ? "active" : "")">
+            <i class="fas fa-calendar"></i>
+            <span>Мои бронирования</span>
+        </a>
+        
+        <a href="@Url.Action("ChangePassword", "Profile")" 
+           class="profile-nav-item @(currentAction == "ChangePassword" ? "active" : "")">
+            <i class="fas fa-lock"></i>
+            <span>Смена пароля</span>
+        </a>
+        
+        <a href="/Car" class="profile-nav-item">
+            <i class="fas fa-search"></i>
+            <span>Найти автомобиль</span>
+        </a>
+    </div>
+</div>

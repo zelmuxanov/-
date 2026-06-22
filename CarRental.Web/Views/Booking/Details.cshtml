@@ -1,0 +1,154 @@
+@model CarRental.BLL.DTOs.Booking.BookingDto
+@using CarRental.Domain.Enums
+@{
+    ViewData["Title"] = $"Бронирование #{Model.Id.ToString().Substring(0, 8)}";
+    Layout = "_Layout";
+}
+
+<div class="container-xxl py-4">
+    <div class="row">
+        <!-- Боковая навигация как в профиле -->
+        <div class="col-lg-3">
+            <div class="profile-sidebar">
+                <div class="profile-sidebar-header p-3 border-bottom">
+                    <h6 class="mb-0" style="color: var(--text-primary);">Навигация</h6>
+                </div>
+                <div class="profile-sidebar-body">
+                    <a href="@Url.Action("Index", "Profile")" class="profile-nav-item-modern">
+                        <i class="fas fa-home profile-nav-icon"></i><span>Обзор</span>
+                    </a>
+                    <a href="@Url.Action("Edit", "Profile")" class="profile-nav-item-modern">
+                        <i class="fas fa-user-edit profile-nav-icon"></i><span>Редактировать профиль</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Documents")" class="profile-nav-item-modern">
+                        <i class="fas fa-file-contract profile-nav-icon"></i><span>Документы</span>
+                    </a>
+                    <a href="@Url.Action("Bookings", "Profile")" class="profile-nav-item-modern active">
+                        <i class="fas fa-calendar profile-nav-icon"></i><span>Мои бронирования</span>
+                    </a>
+                    <a href="@Url.Action("ChangePassword", "Profile")" class="profile-nav-item-modern">
+                        <i class="fas fa-lock profile-nav-icon"></i><span>Смена пароля</span>
+                    </a>
+                    <a href="/Car" class="profile-nav-item-modern">
+                        <i class="fas fa-search profile-nav-icon"></i><span>Найти автомобиль</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="d-flex align-items-center mb-4">
+                <a href="@Url.Action("Bookings", "Profile")" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h5 class="mb-0">Информация о бронировании</h5>
+                        </div>
+                        <div class="card-body-modern">
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Статус</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-@GetStatusBadgeColor(Model.Status)">@GetStatusText(Model.Status)</span>
+                                </dd>
+                                <dt class="col-sm-4">Дата создания</dt>
+                                <dd class="col-sm-8">@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</dd>
+                                <dt class="col-sm-4">Период аренды</dt>
+                                <dd class="col-sm-8">@Model.StartDate.ToString("dd.MM.yyyy") – @Model.EndDate.ToString("dd.MM.yyyy")</dd>
+                                <dt class="col-sm-4">Длительность</dt>
+                                <dd class="col-sm-8">@((Model.EndDate - Model.StartDate).Days) дней</dd>
+                                <dt class="col-sm-4">Стоимость</dt>
+                                <dd class="col-sm-8 fw-bold text-success">@Model.TotalPrice.ToString("N0") ₽</dd>
+                                <dt class="col-sm-4">Залог</dt>
+                                <dd class="col-sm-8">@Model.DepositAmount.ToString("N0") ₽</dd>
+                                @if (!string.IsNullOrEmpty(Model.Notes))
+                                {
+                                    <dt class="col-sm-4">Примечания</dt>
+                                    <dd class="col-sm-8">@Model.Notes</dd>
+                                }
+                            </dl>
+                        </div>
+                    </div>
+
+                    @if (Model.Status == BookingStatus.Confirmed && !string.IsNullOrEmpty(Model.ContractUrl))
+                    {
+                        <div class="card-modern mt-4">
+                            <div class="card-body-modern">
+                                <a href="@Url.Action("DownloadContract", "File", new { bookingId = Model.Id })" class="btn btn-success w-100">
+                                    <i class="fas fa-file-word me-2"></i>Скачать договор
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h5 class="mb-0">Автомобиль</h5>
+                        </div>
+                        <div class="card-body-modern">
+                            @if (Model.Car != null)
+                            {
+                                <div class="text-center mb-3">
+                                    @if (Model.Car.Images != null && Model.Car.Images.Any())
+                                    {
+                                        var mainImage = Model.Car.Images.FirstOrDefault(i => i.IsMain) ?? Model.Car.Images.First();
+                                        <img src="@mainImage.ImageUrl" alt="@Model.Car.Brand @Model.Car.Model" class="img-fluid rounded" style="max-height:200px;" loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-secondary d-flex align-items-center justify-content-center rounded" style="height:150px;">
+                                            <i class="fas fa-car fa-4x text-muted"></i>
+                                        </div>
+                                    }
+                                </div>
+                                <h5>@Model.Car.Brand @Model.Car.Model</h5>
+                                <dl class="row mb-0">
+                                    <dt class="col-sm-4">Год</dt>
+                                    <dd class="col-sm-8">@Model.Car.Year</dd>
+                                    <dt class="col-sm-4">Класс</dt>
+                                    <dd class="col-sm-8">@Model.Car.Class</dd>
+                                    <dt class="col-sm-4">Трансмиссия</dt>
+                                    <dd class="col-sm-8">@Model.Car.Transmission</dd>
+                                    <dt class="col-sm-4">Топливо</dt>
+                                    <dd class="col-sm-8">@Model.Car.FuelType</dd>
+                                    <dt class="col-sm-4">Цена/сутки</dt>
+                                    <dd class="col-sm-8">@Model.Car.PricePerDay.ToString("N0") ₽</dd>
+                                </dl>
+                            }
+                            else
+                            {
+                                <p class="text-muted">Информация об автомобиле недоступна</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadgeColor(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "success",
+        BookingStatus.Pending => "warning",
+        BookingStatus.Completed => "info",
+        BookingStatus.Cancelled => "danger",
+        _ => "secondary"
+    };
+    string GetStatusText(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "Подтверждено",
+        BookingStatus.Pending => "На рассмотрении",
+        BookingStatus.Completed => "Завершено",
+        BookingStatus.Cancelled => "Отменено",
+        _ => status.ToString()
+    };
+}

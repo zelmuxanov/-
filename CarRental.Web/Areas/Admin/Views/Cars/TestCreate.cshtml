@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Тест создания";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h1>Тест отправки данных</h1>
+
+<form method="post" action="/Admin/Cars/TestCreate">
+    @Html.AntiForgeryToken()
+    
+    <div class="mb-3">
+        <label>Brand:</label>
+        <input type="text" name="Brand" value="Toyota" class="form-control">
+    </div>
+    
+    <div class="mb-3">
+        <label>Model:</label>
+        <input type="text" name="Model" value="Camry" class="form-control">
+    </div>
+    
+    <div class="mb-3">
+        <label>Year:</label>
+        <input type="number" name="Year" value="2023" class="form-control">
+    </div>
+    
+    <div class="mb-3">
+        <label>Class:</label>
+        <select name="Class" class="form-select">
+            <option value="Standard">Standard</option>
+            <option value="Economy">Economy</option>
+            <option value="Premium">Premium</option>
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label>FuelType:</label>
+        <select name="FuelType" class="form-select">
+            <option value="Petrol">Petrol</option>
+            <option value="Diesel">Diesel</option>
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label>Transmission:</label>
+        <select name="Transmission" class="form-select">
+            <option value="Automatic">Automatic</option>
+            <option value="Manual">Manual</option>
+        </select>
+    </div>
+    
+    <div class="mb-3">
+        <label>PricePerDay:</label>
+        <input type="number" name="PricePerDay" value="3000" class="form-control">
+    </div>
+    
+    <div class="mb-3">
+        <label>Seats:</label>
+        <input type="number" name="Seats" value="5" class="form-control">
+    </div>
+    
+    <div class="mb-3">
+        <label>EngineCapacity:</label>
+        <input type="number" step="0.1" name="EngineCapacity" value="2.0" class="form-control">
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Отправить</button>
+</form>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        console.log('Отправка формы...');
+        const formData = new FormData(this);
+        
+        console.log('Данные:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+        
+        // Отправляем через fetch
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'RequestVerificationToken': document.querySelector('[name=__RequestVerificationToken]').value
+            }
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Ответ:', data);
+            alert('Ответ сервера: ' + data);
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка: ' + error);
+        });
+    });
+</script>

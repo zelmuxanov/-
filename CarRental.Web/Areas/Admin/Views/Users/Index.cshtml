@@ -1,0 +1,230 @@
+@model CarRental.Web.ViewModels.Admin.AdminUsersViewModel
+@using CarRental.Domain.Enums
+@{
+    ViewData["Title"] = "Управление пользователями";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">Поиск</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="@Model.Search" placeholder="Имя, email, телефон...">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">Статус</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">Все статусы</option>
+                    <option value="1" selected="@(Model.StatusFilter == UserStatus.Pending)">На рассмотрении</option>
+                    <option value="2" selected="@(Model.StatusFilter == UserStatus.Active)">Активен</option>
+                    <option value="3" selected="@(Model.StatusFilter == UserStatus.Blocked)">Заблокирован</option>
+                    <option value="4" selected="@(Model.StatusFilter == UserStatus.Rejected)">Отклонен</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="pageSize" class="form-label">На странице</label>
+                <select class="form-select" id="pageSize" name="pageSize">
+                    <option value="10" selected="@(Model.PageSize == 10)">10</option>
+                    <option value="25" selected="@(Model.PageSize == 25)">25</option>
+                    <option value="50" selected="@(Model.PageSize == 50)">50</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Применить</button>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">Сбросить</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Сообщения -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Таблица пользователей -->
+<div class="card">
+    <div class="card-body">
+        @if (Model.Users.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Имя</th>
+                            <th>Email</th>
+                            <th>Телефон</th>
+                            <th>Статус</th>
+                            <th>Дата регистрации</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td><small class="text-muted">@user.Id.ToString().Substring(0, 8)...</small></td>
+                                <td>@user.FirstName @user.LastName</td>
+                                <td>@user.Email</td>
+                                <td>@user.PhoneNumber</td>
+                                <td>
+                                    @switch (user.Status)
+                                    {
+                                        case UserStatus.Pending:
+                                            <span class="badge bg-warning">На рассмотрении</span>
+                                            break;
+                                        case UserStatus.Active:
+                                            <span class="badge bg-success">Активен</span>
+                                            break;
+                                        case UserStatus.Blocked:
+                                            <span class="badge bg-danger">Заблокирован</span>
+                                            break;
+                                        case UserStatus.Rejected:
+                                            <span class="badge bg-secondary">Отклонен</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>@user.RegistrationDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="@Url.Action("Details", new { id = user.Id })" 
+                                           class="btn btn-outline-info" title="Просмотр">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        @if (user.Status == UserStatus.Pending)
+                                        {
+                                            <form method="post" action="@Url.Action("Activate", new { id = user.Id })" 
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-success" 
+                                                        title="Активировать"
+                                                        onclick="return confirm('Активировать пользователя @user.Email?')">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        
+                                        @if (user.Status == UserStatus.Active)
+                                        {
+                                            <form method="post" action="@Url.Action("Block", new { id = user.Id })" 
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-warning" 
+                                                        title="Заблокировать"
+                                                        onclick="return confirm('Заблокировать пользователя @user.Email?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        
+                                        @if (user.Status == UserStatus.Blocked)
+                                        {
+                                            <form method="post" action="@Url.Action("Unblock", new { id = user.Id })" 
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-success" 
+                                                        title="Разблокировать"
+                                                        onclick="return confirm('Разблокировать пользователя @user.Email?')">
+                                                    <i class="fas fa-unlock"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <form method="post" action="@Url.Action("Delete", new { id = user.Id })" 
+                                                class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-danger" 
+                                                    onclick="return confirm('Вы уверены, что хотите удалить пользователя @user.Email?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Пагинация -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        @if (Model.CurrentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="@Url.Action("Index", new { page = Model.CurrentPage - 1, pageSize = Model.PageSize, status = Model.StatusFilter, search = Model.Search })">
+                                    &laquo;
+                                </a>
+                            </li>
+                        }
+                        
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link" 
+                                   href="@Url.Action("Index", new { page = i, pageSize = Model.PageSize, status = Model.StatusFilter, search = Model.Search })">
+                                    @i
+                                </a>
+                            </li>
+                        }
+                        
+                        @if (Model.CurrentPage < Model.TotalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="@Url.Action("Index", new { page = Model.CurrentPage + 1, pageSize = Model.PageSize, status = Model.StatusFilter, search = Model.Search })">
+                                    &raquo;
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Пользователи не найдены</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">Всего пользователей</h6>
+                <h4 class="card-text">@Model.TotalCount</h4>
+            </div>
+        </div>
+    </div>
+</div>

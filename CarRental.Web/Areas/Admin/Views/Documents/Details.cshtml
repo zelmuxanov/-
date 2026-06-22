@@ -1,0 +1,303 @@
+@model CarRental.BLL.DTOs.Document.DocumentDto
+@{
+    ViewData["Title"] = "Просмотр документа";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    bool isPassport = Model.DocumentType == CarRental.Domain.Enums.DocumentType.Passport;
+    Guid? returnUserId = ViewBag.ReturnUserId as Guid?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+    <a asp-area="Admin" asp-action="Index" asp-route-userId="@ViewBag.ReturnUserId" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Назад к списку
+    </a>
+</div>
+
+<!-- Сообщения -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center">
+                <h5 class="card-title mb-0 me-auto">Данные документа</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#editForm">
+                        <i class="fas fa-edit me-1"></i>Редактировать
+                    </button>
+                    <form asp-area="Admin" asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline-block">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@returnUserId" />
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Удалить документ безвозвратно?');">
+                            <i class="fas fa-trash me-1"></i>Удалить документ
+                        </button>
+                    </form>
+                </div>
+            </div>>
+            <div class="card-body">
+                <!-- Форма редактирования (скрыта по умолчанию) -->
+                <div class="collapse mb-4" id="editForm">
+                    <div class="card card-body bg-light">
+                        <form asp-action="Update" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            @if (isPassport)
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label">Серия и номер</label>
+                                    <input name="DocumentNumber" class="form-control" value="@Model.DocumentNumber" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Дата выдачи</label>
+                                    <input name="IssueDate" type="date" class="form-control" value="@Model.IssueDate?.ToString("yyyy-MM-dd")" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Кем выдан</label>
+                                    <input name="IssuedBy" class="form-control" value="@Model.IssuedBy" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Дата рождения</label>
+                                    <input name="BirthDate" class="form-control" value="@Model.BirthDate" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Место рождения</label>
+                                    <input name="PlaceOfBirth" class="form-control" value="@Model.PlaceOfBirth" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Адрес регистрации</label>
+                                    <textarea name="RegistrationAddress" class="form-control" rows="2">@Model.RegistrationAddress</textarea>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label">Серия и номер ВУ</label>
+                                    <input name="DocumentNumber" class="form-control" value="@Model.DocumentNumber" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Дата выдачи</label>
+                                    <input name="IssueDate" type="date" class="form-control" value="@Model.IssueDate?.ToString("yyyy-MM-dd")" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Срок действия</label>
+                                    <input name="ExpiryDate" type="date" class="form-control" value="@Model.ExpiryDate?.ToString("yyyy-MM-dd")" />
+                                </div>
+                            }
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            <div class="mt-3">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Отображение данных -->
+                <dl class="row">
+                    <dt class="col-sm-4">Пользователь</dt>
+                    <dd class="col-sm-8">
+                        <a href="@Url.Action("Details", "Users", new { area = "Admin", id = Model.UserId })">
+                            @Model.UserFullName
+                        </a>
+                    </dd>
+
+                    <dt class="col-sm-4">Тип документа</dt>
+                    <dd class="col-sm-8">@GetDocumentTypeName(Model.DocumentType)</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.DocumentNumber))
+                    {
+                        <dt class="col-sm-4">Номер</dt>
+                        <dd class="col-sm-8">@Model.DocumentNumber</dd>
+                    }
+
+                    @if (Model.IssueDate.HasValue)
+                    {
+                        <dt class="col-sm-4">Дата выдачи</dt>
+                        <dd class="col-sm-8">@Model.IssueDate.Value.ToShortDateString()</dd>
+                    }
+
+                    @if (Model.ExpiryDate.HasValue)
+                    {
+                        <dt class="col-sm-4">Срок действия</dt>
+                        <dd class="col-sm-8">@Model.ExpiryDate.Value.ToShortDateString()</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.IssuedBy))
+                    {
+                        <dt class="col-sm-4">Кем выдан</dt>
+                        <dd class="col-sm-8">@Model.IssuedBy</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.BirthDate))
+                    {
+                        <dt class="col-sm-4">Дата рождения</dt>
+                        <dd class="col-sm-8">@Model.BirthDate</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.PlaceOfBirth))
+                    {
+                        <dt class="col-sm-4">Место рождения</dt>
+                        <dd class="col-sm-8">@Model.PlaceOfBirth</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.RegistrationAddress))
+                    {
+                        <dt class="col-sm-4">Адрес регистрации</dt>
+                        <dd class="col-sm-8">@Model.RegistrationAddress</dd>
+                    }
+
+                    <dt class="col-sm-4">Статус</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @GetStatusBadgeClass(Model.Status)">@GetStatusText(Model.Status)</span>
+                    </dd>
+
+                    @if (Model.VerifiedAt.HasValue)
+                    {
+                        <dt class="col-sm-4">Дата проверки</dt>
+                        <dd class="col-sm-8">@Model.VerifiedAt.Value.ToShortDateString()</dd>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <dt class="col-sm-4">Комментарий</dt>
+                        <dd class="col-sm-8">@Model.Description</dd>
+                    }
+                </dl>
+
+                <div class="mt-4">
+                    <a href="@Model.FileUrl" target="_blank" class="btn btn-primary me-2">
+                        <i class="fas fa-file me-2"></i>@(isPassport ? "Лицевая сторона" : "Лицевая сторона прав")
+                    </a>
+                    @if (!string.IsNullOrEmpty(Model.FileUrl2))
+                    {
+                        <a href="@Model.FileUrl2" target="_blank" class="btn btn-outline-secondary">
+                            <i class="fas fa-file me-2"></i>@(isPassport ? "Прописка" : "Оборотная сторона")
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Status == "Pending")
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <form asp-area="Admin" asp-action="Verify" asp-route-id="@Model.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@returnUserId" />
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Комментарий (необязательно)</label>
+                                    <input name="comment" id="comment" class="form-control" placeholder="Например: документ корректен" />
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-check me-2"></i>Подтвердить документ
+                                </button>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form asp-area="Admin" asp-action="Reject" asp-route-id="@Model.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="userId" value="@returnUserId" />
+                                <div class="mb-3">
+                                    <label for="rejectReason" class="form-label">Причина отклонения</label>
+                                    <input name="rejectReason" id="rejectReason" class="form-control" placeholder="Укажите причину" required />
+                                </div>
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-times me-2"></i>Отклонить документ
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Предпросмотр файлов -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">@(isPassport ? "Лицевая сторона" : "Лицевая сторона прав")</h5>
+            </div>
+            <div class="card-body text-center">
+                @if (Model.FileUrl.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                {
+                    <embed src="@Model.FileUrl" type="application/pdf" width="100%" height="400px" />
+                }
+                else
+                {
+                    <img src="@Model.FileUrl" alt="Документ" class="img-fluid rounded" style="max-height: 400px;" />
+                }
+            </div>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.FileUrl2))
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">@(isPassport ? "Прописка" : "Оборотная сторона")</h5>
+                </div>
+                <div class="card-body text-center">
+                    @if (Model.FileUrl2.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <embed src="@Model.FileUrl2" type="application/pdf" width="100%" height="400px" />
+                    }
+                    else
+                    {
+                        <img src="@Model.FileUrl2" alt="Документ" class="img-fluid rounded" style="max-height: 400px;" />
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetDocumentTypeName(CarRental.Domain.Enums.DocumentType type)
+    {
+        return type switch
+        {
+            CarRental.Domain.Enums.DocumentType.Passport => "Паспорт",
+            CarRental.Domain.Enums.DocumentType.DriverLicense => "Водительское удостоверение",
+            CarRental.Domain.Enums.DocumentType.IdentityCard => "Удостоверение личности",
+            CarRental.Domain.Enums.DocumentType.Insurance => "Страховка",
+            _ => "Документ"
+        };
+    }
+    
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning",
+            "Verified" => "bg-success",
+            "Rejected" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+    
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "На проверке",
+            "Verified" => "Подтверждён",
+            "Rejected" => "Отклонён",
+            _ => status
+        };
+    }
+}

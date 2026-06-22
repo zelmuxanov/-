@@ -1,0 +1,87 @@
+@{
+    ViewData["Title"] = "Регистрация успешна";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <div class="success-icon">
+                            <i class="fas fa-envelope fa-4x text-primary"></i>
+                        </div>
+                    </div>
+                    
+                    <h1 class="display-6 fw-bold mb-3">Регистрация успешно завершена!</h1>
+                    
+                    <div class="alert alert-info mb-4">
+                        <p class="mb-2">
+                            Мы отправили письмо с подтверждением на адрес: 
+                            <strong class="text-primary">@ViewBag.Email</strong>
+                        </p>
+                        <p class="mb-0">
+                            Пожалуйста, проверьте вашу почту и подтвердите email адрес.
+                        </p>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">📋 Что дальше?</h5>
+                            <ul class="text-start">
+                                <li>Найдите письмо от <strong>О! Прокат</strong> в вашем почтовом ящике</li>
+                                <li>Нажмите на ссылку подтверждения в письме</li>
+                                <li>Или введите 6-значный код из письма</li>
+                                <li>После подтверждения email ваш аккаунт будет активирован администратором</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-3 col-md-8 mx-auto">
+                        <a href="@Url.Action("ConfirmByCode", "EmailConfirmation")" 
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-key me-2"></i>Подтвердить по коду
+                        </a>
+                        
+                        <a href="@Url.Action("Login", "Account")" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти в систему
+                        </a>
+                        
+                        <a href="@Url.Action("ResendConfirmation", "EmailConfirmation")" 
+                           class="btn btn-link text-decoration-none">
+                            <i class="fas fa-redo me-1"></i>Отправить письмо повторно
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4 text-muted">
+                        <small>
+                            Не видите письмо? Проверьте папку "Спам" или 
+                            <a href="@Url.Action("ResendConfirmation", "EmailConfirmation")">запросите новое письмо</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .display-1 {
+        font-size: 5rem;
+    }
+    
+    .btn {
+        padding: 12px 20px;
+    }
+</style>

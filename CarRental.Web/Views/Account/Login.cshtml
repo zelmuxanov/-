@@ -1,0 +1,75 @@
+@model CarRental.Web.ViewModels.Account.LoginViewModel
+@{
+    ViewData["Title"] = "Вход";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="text-center mb-0">Вход в систему</h2>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" asp-action="Login">
+                        @Html.AntiForgeryToken()
+                        
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="Email" class="form-label fw-bold">Email адрес</label>
+                            <input type="email" id="Email" name="Email" class="form-control form-control-lg" 
+                                   value="@(Model?.Email ?? "")" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Password" class="form-label fw-bold">Пароль</label>
+                            <input type="password" id="Password" name="Password" class="form-control form-control-lg" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" id="RememberMe" name="RememberMe" value="true" 
+                                   class="form-check-input" @(Model?.RememberMe == true ? "checked" : "") />
+                            <input type="hidden" name="RememberMe" value="false" />
+                            <label for="RememberMe" class="form-check-label">Запомнить меня</label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Войти в систему</button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <p class="mb-1">
+                                <a href="@Url.Action("ForgotPassword", "PasswordRecovery")" class="text-decoration-none">
+                                    Забыли пароль?
+                                </a>
+                            </p>
+                            <p class="mb-0">Нет аккаунта? 
+                                <a href="/Account/Register" class="fw-bold text-decoration-none">Зарегистрируйтесь здесь</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

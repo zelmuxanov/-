@@ -1,0 +1,261 @@
+@model CarRental.Web.ViewModels.Account.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Регистрация";
+    Layout = "_Layout";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h2 class="text-center mb-0">Регистрация нового аккаунта</h2>
+                </div>
+                <div class="card-body p-4">
+                    <!-- ВАЖНО: Показываем все ошибки валидации -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <form method="post" asp-action="Register" id="registerForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="FirstName" class="form-label fw-bold">Имя *</label>
+                                    <input type="text" id="FirstName" name="FirstName" class="form-control" value="@Model?.FirstName" />
+                                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="LastName" class="form-label fw-bold">Фамилия *</label>
+                                    <input type="text" id="LastName" name="LastName" class="form-control" value="@Model?.LastName" />
+                                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="Middlename" class="form-label fw-bold">Отчество</label>
+                                    <input type="text" id="FirstName" name="FirstName" class="form-control" value="@Model?.MiddleName" />
+                                    <span asp-validation-for="MiddleName" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Email" class="form-label fw-bold">Email адрес *</label>
+                            <input type="email" id="Email" name="Email" class="form-control" value="@Model?.Email" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="PhoneNumber" class="form-label fw-bold">Номер телефона *</label>
+                            <input type="tel" id="PhoneNumber" name="PhoneNumber" class="form-control" 
+                                value="@Model?.PhoneNumber" placeholder="+7 (___) ___-__-__" required />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            <div class="form-text">Формат: +7 (XXX) XXX-XX-XX</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="BirthDate" class="form-label fw-bold">Дата рождения *</label>
+                            <input type="date" id="BirthDate" name="BirthDate" class="form-control" value="@Model?.BirthDate?.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="BirthDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="DrivingExperience" class="form-label fw-bold">Стаж вождения (лет) *</label>
+                            <input type="number" id="DrivingExperience" name="DrivingExperience" class="form-control" min="2" max="100" value="@Model?.DrivingExperience" />
+                            <span asp-validation-for="DrivingExperience" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Password" class="form-label fw-bold">Пароль *</label>
+                            <input type="password" id="Password" name="Password" class="form-control" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                            <!-- ДОБАВЛЕНО: контейнер для требований пароля -->
+                            <div id="password-requirements"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ConfirmPassword" class="form-label fw-bold">Подтверждение пароля *</label>
+                            <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" id="AgreeToTerms" name="AgreeToTerms" value="true" class="form-check-input" @(Model?.AgreeToTerms == true ? "checked" : "") />
+                            <label for="AgreeToTerms" class="form-check-label fw-bold">
+                                Я принимаю условия пользовательского соглашения *
+                            </label>
+                            <span asp-validation-for="AgreeToTerms" class="text-danger small d-block"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">Зарегистрироваться</button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <p class="mb-0">Уже есть аккаунт? 
+                                <a href="/Account/Login" class="fw-bold text-decoration-none">Войдите</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <!-- ДОБАВЛЕНО: Подключение jQuery и InputMask -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+    
+    <script>
+        // Диагностика формы
+        document.getElementById('registerForm')?.addEventListener('submit', function(e) {
+            console.log('=== ДИАГНОСТИКА ФОРМЫ РЕГИСТРАЦИИ ===');
+            
+            const formData = new FormData(this);
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+        });
+
+        $(document).ready(function() {
+            // Маска для телефона
+            $('#PhoneNumber').inputmask({
+                mask: '+7 (999) 999-99-99',
+                placeholder: '_',
+                clearIncomplete: true,
+                showMaskOnHover: true,
+                onBeforeMask: function(value, opts) {
+                    if (!value) return value;
+                    
+                    console.log('Before mask:', value);
+                    
+                    // Убираем все нецифровые символы
+                    let digits = value.replace(/\D/g, '');
+                    
+                    // Сохраняем оригинальное значение для анализа
+                    let originalValue = value;
+                    
+                    // Если вставляется номер, начинающийся с 9, сохраняем это
+                    if (originalValue.includes('9') && digits.length >= 10) {
+                        // Находим позицию первой 9 в оригинальной строке
+                        let firstNineIndex = originalValue.indexOf('9');
+                        if (firstNineIndex >= 0 && firstNineIndex <= 3) {
+                            // Если 9 находится в начале, обрабатываем специально
+                            if (digits.length === 10) {
+                                return digits; // Оставляем как есть - начинается с 9
+                            } else if (digits.length === 11 && digits.startsWith('9')) {
+                                return digits.substring(1); // Убираем лишнюю цифру в начале
+                            }
+                        }
+                    }
+                    
+                    // Стандартная обработка для других случаев
+                    if (digits.length === 11) {
+                        if (digits.startsWith('7') || digits.startsWith('8')) {
+                            return digits.substring(1);
+                        }
+                    } else if (digits.length > 11) {
+                        digits = digits.substring(digits.length - 10);
+                    }
+                    
+                    return digits;
+                }
+            });
+
+            // Дополнительная обработка для гарантии работы с 9
+            $('#PhoneNumber').on('paste', function(e) {
+                let clipboardData = e.originalEvent.clipboardData || window.clipboardData;
+                let pastedData = clipboardData.getData('Text');
+                
+                if (pastedData && pastedData.includes('9')) {
+                    // Даем время на обработку вставки
+                    setTimeout(() => {
+                        let currentValue = $(this).val();
+                        // Если маска добавила +7 (7, исправляем на +7 (9
+                        if (currentValue && currentValue.startsWith('+7 (7')) {
+                            let correctedValue = '+7 (9' + currentValue.substring(5);
+                            $(this).val(correctedValue);
+                        }
+                    }, 100);
+                }
+            });
+
+            // Валидация даты рождения (минимальный возраст 23 года)
+            $('#BirthDate').on('change', function() {
+                const birthDate = new Date(this.value);
+                const today = new Date();
+                const minDate = new Date(today.getFullYear() - 23, today.getMonth(), today.getDate());
+                
+                if (birthDate > minDate) {
+                    this.setCustomValidity('Минимальный возраст для регистрации - 23 года');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            // Валидация стажа вождения
+            $('#DrivingExperience').on('change', function() {
+                if (this.value < 2) {
+                    this.setCustomValidity('Минимальный стаж вождения - 2 года');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            // Динамическая проверка пароля
+            $('#Password').on('input', function() {
+                const password = this.value;
+                const requirements = {
+                    length: password.length >= 6,
+                    uppercase: /[A-Z]/.test(password),
+                    lowercase: /[a-z]/.test(password),
+                    digit: /\d/.test(password)
+                };
+
+                // Обновляем подсказки
+                updatePasswordRequirements(requirements);
+            });
+
+            function updatePasswordRequirements(requirements) {
+                const requirementsElement = document.getElementById('password-requirements');
+                if (requirementsElement) {
+                    let html = '<small class="form-text">Требования к паролю:</small><ul class="small mb-0">';
+                    html += `<li class="${requirements.length ? 'text-success' : 'text-danger'}">Минимум 6 символов</li>`;
+                    html += `<li class="${requirements.uppercase ? 'text-success' : 'text-danger'}">Хотя бы одна заглавная буква</li>`;
+                    html += `<li class="${requirements.lowercase ? 'text-success' : 'text-danger'}">Хотя бы одна строчная буква</li>`;
+                    html += `<li class="${requirements.digit ? 'text-success' : 'text-danger'}">Хотя бы одна цифра</li>`;
+                    html += '</ul>';
+                    requirementsElement.innerHTML = html;
+                }
+            }
+
+            // Инициализация проверки пароля при загрузке
+            updatePasswordRequirements({
+                length: false,
+                uppercase: false,
+                lowercase: false,
+                digit: false
+            });
+        });
+    </script>
+}

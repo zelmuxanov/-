@@ -1,0 +1,400 @@
+@model CarRental.Web.ViewModels.Admin.BannerCreateEditViewModel
+@using CarRental.Domain.Enums
+
+@{
+    ViewData["Title"] = Model.Id.HasValue ? "Редактирование баннера" : "Создание баннера";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas @(Model.Id.HasValue ? "fa-edit" : "fa-plus") me-2"></i>@ViewData["Title"]
+        </h1>
+        <div>
+            <a asp-area="Admin" asp-controller="Content" asp-action="Banners" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-1"></i>Назад к списку
+            </a>
+            <a asp-area="Admin" asp-controller="Content" asp-action="Index" class="btn btn-outline-info">
+                <i class="fas fa-home me-1"></i>Главная
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        @if (Model.Id.HasValue)
+                        {
+                            <input type="hidden" asp-for="Id" />
+                            <input type="hidden" asp-for="CurrentImageUrl" />
+                            <input type="hidden" asp-for="CurrentVideoUrl" />
+                        }
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                <h5>Ошибки при заполнении формы:</h5>
+                                <ul>
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">Заголовок</label>
+                            <input asp-for="Title" class="form-control" maxlength="200" placeholder="Введите заголовок баннера" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">Описание</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" maxlength="500" placeholder="Введите описание баннера"></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Тип медиа</label>
+                            <div class="form-check">
+                                <input asp-for="MediaType" type="radio" value="@((int)BannerMediaType.Image)" class="form-check-input" id="mediaImage" />
+                                <label class="form-check-label" for="mediaImage">Изображение</label>
+                            </div>
+                            <div class="form-check">
+                                <input asp-for="MediaType" type="radio" value="@((int)BannerMediaType.Video)" class="form-check-input" id="mediaVideo" />
+                                <label class="form-check-label" for="mediaVideo">Видео</label>
+                            </div>
+                            <span asp-validation-for="MediaType" class="text-danger"></span>
+                        </div>
+
+                        <div id="imageUploadSection" style="display: @(Model.MediaType == BannerMediaType.Image ? "block" : "none")">
+                            <div class="mb-3">
+                                <label asp-for="ImageFile" class="form-label">Изображение @(!Model.Id.HasValue ? "*" : "")</label>
+                                <input asp-for="ImageFile" class="form-control" accept="image/*" />
+                                <small class="form-text text-muted">Поддерживаются JPG, PNG, GIF, WEBP, BMP, размер до 5MB</small>
+                                <span asp-validation-for="ImageFile" class="text-danger"></span>
+                                @if (Model.Id.HasValue && !string.IsNullOrEmpty(Model.CurrentImageUrl))
+                                {
+                                    <div class="mt-2">
+                                        <small class="text-muted">Текущее изображение:</small><br>
+                                        <img src="@Model.CurrentImageUrl" alt="Текущее изображение" class="img-thumbnail mt-1" style="max-height: 100px;" />
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div id="videoUploadSection" style="display: @(Model.MediaType == BannerMediaType.Video ? "block" : "none")">
+                            <div class="mb-3">
+                                <label asp-for="VideoFile" class="form-label">Загрузить видеофайл</label>
+                                <input asp-for="VideoFile" class="form-control" accept="video/mp4,video/webm,video/ogg,video/quicktime" />
+                                <small class="form-text text-muted">Поддерживаются MP4, WebM, OGV, MOV (до 100MB)</small>
+                                <span asp-validation-for="VideoFile" class="text-danger"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label asp-for="VideoUrl" class="form-label">Или укажите ссылку на видео (YouTube, Vimeo и др.)</label>
+                                <input asp-for="VideoUrl" class="form-control" placeholder="https://www.youtube.com/watch?v=..." />
+                                <small class="form-text text-muted">Если загружен файл, ссылка будет проигнорирована</small>
+                                <span asp-validation-for="VideoUrl" class="text-danger"></span>
+                            </div>
+                            <div id="videoSettings">
+                                <div class="card mt-3">
+                                    <div class="card-header">Настройки видео</div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input asp-for="VideoAutoplay" class="form-check-input" />
+                                            <label asp-for="VideoAutoplay" class="form-check-label">Автовоспроизведение</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="VideoMuted" class="form-check-input" />
+                                            <label asp-for="VideoMuted" class="form-check-label">Без звука</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="VideoLoop" class="form-check-input" />
+                                            <label asp-for="VideoLoop" class="form-check-label">Зациклить</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input asp-for="VideoControls" class="form-check-input" />
+                                            <label asp-for="VideoControls" class="form-check-label">Показывать элементы управления</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @if (Model.Id.HasValue && !string.IsNullOrEmpty(Model.CurrentVideoUrl))
+                            {
+                                <div class="mt-2">
+                                    <small class="text-muted">Текущее видео:</small><br>
+                                    <video src="@Model.CurrentVideoUrl" controls style="max-height: 150px; max-width: 100%;"></video>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Link" class="form-label">Ссылка (опционально)</label>
+                                <input asp-for="Link" class="form-control" placeholder="https://example.com/page" />
+                                <span asp-validation-for="Link" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="BannerType" class="form-label">Тип баннера *</label>
+                                <select asp-for="BannerType" asp-items="Model.BannerTypes" class="form-select"></select>
+                                <span asp-validation-for="BannerType" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DisplayOrder" class="form-label">Порядок отображения</label>
+                                <input asp-for="DisplayOrder" class="form-control" min="0" max="100" />
+                                <small class="form-text text-muted">Меньше число = выше в списке</small>
+                                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ButtonText" class="form-label">Текст кнопки</label>
+                                <input asp-for="ButtonText" class="form-control" maxlength="50" placeholder="Например: Подробнее" />
+                                <span asp-validation-for="ButtonText" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="StartDate" class="form-label">Дата начала показа</label>
+                                <input asp-for="StartDate" class="form-control" type="datetime-local" value="@(Model.StartDate?.ToString("yyyy-MM-ddTHH:mm"))" />
+                                <span asp-validation-for="StartDate" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EndDate" class="form-label">Дата окончания показа</label>
+                                <input asp-for="EndDate" class="form-control" type="datetime-local" value="@(Model.EndDate?.ToString("yyyy-MM-ddTHH:mm"))" />
+                                <span asp-validation-for="EndDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsActive" class="form-check-input" role="switch" />
+                                    <label asp-for="IsActive" class="form-check-label">Активен</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Селекты масштабирования (без превью, превью в правой колонке) -->
+                        <div id="imageSettings" class="mb-3" style="display: @(Model.MediaType == BannerMediaType.Image ? "block" : "none")">
+                            <label class="form-label">Масштабирование и положение</label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <select asp-for="ObjectFit" class="form-select" id="objectFit">
+                                        <option value="cover">Заполнить (cover)</option>
+                                        <option value="contain">Вписать (contain)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <select asp-for="ObjectPosition" class="form-select" id="objectPosition">
+                                        <option value="center">Центр</option>
+                                        <option value="top">Верх</option>
+                                        <option value="bottom">Низ</option>
+                                        <option value="left">Лево</option>
+                                        <option value="right">Право</option>
+                                    </select>
+                                    <small class="form-text text-muted">Положение изображения внутри контейнера</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-area="Admin" asp-controller="Content" asp-action="Banners" class="btn btn-outline-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas @(Model.Id.HasValue ? "fa-save" : "fa-plus") me-1"></i>
+                                @(Model.Id.HasValue ? "Сохранить изменения" : "Создать баннер")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка (предпросмотр + информация) -->
+        <div class="col-lg-4">
+            <!-- Предпросмотр -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Предпросмотр</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div id="preview-image-container" class="border rounded" style="height: 200px; overflow: hidden;">
+                        <img id="preview-image" src="@Model.CurrentImageUrl" alt="Предпросмотр"
+                             style="width:100%; height:100%; object-fit: @Model.ObjectFit; object-position: @Model.ObjectPosition;" />
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">Изображение будет отображаться в карусели согласно выбранным параметрам</p>
+                </div>
+            </div>
+            <!-- Информация -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Информация</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            <strong>Рекомендуемые размеры:</strong>
+                            <ul class="mt-1">
+                                <li>Главная карусель: 1920×600px</li>
+                                <li>Боковой баннер: 300×250px</li>
+                                <li>Акционный баннер: 800×400px</li>
+                            </ul>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-file-image text-primary me-2"></i>
+                            <strong>Форматы изображений:</strong> JPG, PNG, GIF, WEBP, BMP (до 5MB)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-video text-primary me-2"></i>
+                            <strong>Форматы видео:</strong> MP4, WebM, OGV, MOV (до 100MB)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-lightbulb text-primary me-2"></i>
+                            <strong>Подсказка:</strong> Порядок отображения: 0 = самый высокий
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            $('input[name="MediaType"]').on('change', function() {
+                var type = $(this).val();
+                if (type == '@((int)BannerMediaType.Image)') {
+                    $('#imageUploadSection').show();
+                    $('#videoUploadSection').hide();
+                    $('#imageSettings').show();
+                } else {
+                    $('#imageUploadSection').hide();
+                    $('#videoUploadSection').show();
+                    $('#imageSettings').hide();
+                }
+            });
+
+            function updateImagePreview() {
+                var $img = $('#preview-image');
+                $img.css({
+                    'object-fit': $('#objectFit').val() || 'cover',
+                    'object-position': $('#objectPosition').val() || 'center'
+                });
+            }
+
+            $('#objectFit, #objectPosition').on('change', updateImagePreview);
+
+            $('#ImageFile').on('change', function(e) {
+                var file = this.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер: 5MB');
+                    $(this).val('');
+                    return;
+                }
+                var reader = new FileReader();
+                reader.onload = function(ev) {
+                    $('#preview-image').attr('src', ev.target.result).show();
+                    updateImagePreview();
+                };
+                reader.readAsDataURL(file);
+            });
+
+            $('#VideoFile').on('change', function(e) {
+                var file = this.files[0];
+                if (!file) return;
+                if (file.size > 100 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер: 100MB');
+                    $(this).val('');
+                    return;
+                }
+                var url = URL.createObjectURL(file);
+                var $previewDiv = $('#media-preview');
+                var $video = $previewDiv.find('#preview-video');
+                if ($video.length === 0) {
+                    $video = $('<video id="preview-video" controls style="max-height: 200px; max-width: 100%;" class="img-fluid rounded mb-3"></video>');
+                    $previewDiv.prepend($video);
+                }
+                $video.attr('src', url).show();
+                $('#preview-image').hide();
+            });
+
+            function updatePreview() {
+                const title = $('#Title').val();
+                $('#preview-title').text(title || 'Заголовок баннера');
+                const description = $('#Description').val() || 'Описание баннера';
+                $('#preview-description').text(description.length > 100 ? description.substring(0, 100) + '...' : description);
+                const buttonText = $('#ButtonText').val();
+                const link = $('#Link').val() || '#';
+                let $button = $('#preview-button');
+                if (buttonText) {
+                    if ($button.length === 0) {
+                        $button = $('<a class="btn btn-sm btn-primary mt-2" id="preview-button" target="_blank"></a>');
+                        $('#preview-description').after($button);
+                    }
+                    $button.text(buttonText).attr('href', link);
+                } else if ($button.length > 0) {
+                    $button.remove();
+                }
+            }
+
+            $('#Title, #Description, #ButtonText, #Link').on('input', updatePreview);
+            updatePreview();
+
+            $('#StartDate, #EndDate').on('change', function() {
+                const start = $('#StartDate').val();
+                const end = $('#EndDate').val();
+                if (start && end && new Date(start) > new Date(end)) {
+                    alert('Дата начала не может быть позже даты окончания');
+                    $('#EndDate').val('');
+                }
+            });
+
+            $('form').on('submit', function(e) {
+                const mediaType = $('input[name="MediaType"]:checked').val();
+                const isCreate = !$('#Id').val();
+
+                if (mediaType == '@((int)BannerMediaType.Image)') {
+                    if (isCreate && $('#ImageFile')[0].files.length === 0) {
+                        alert('Для создания баннера необходимо выбрать изображение');
+                        e.preventDefault();
+                        return false;
+                    }
+                } else {
+                    if (isCreate && $('#VideoFile')[0].files.length === 0 && !$('#VideoUrl').val()) {
+                        alert('Для создания баннера необходимо загрузить видео или указать ссылку');
+                        e.preventDefault();
+                        return false;
+                    }
+                }
+
+                const $btn = $(this).find('button[type="submit"]');
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Сохранение...');
+            });
+
+            updateImagePreview();
+        });
+    </script>
+}

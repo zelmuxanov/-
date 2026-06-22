@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Админ-панель</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true">
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="admin-body">
+    <!-- Мобильная кнопка открытия меню -->
+    <button class="mobile-menu-toggle d-md-none" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Оверлей -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="brand-logo">
+                            <i class="fas fa-car text-white"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-white mb-0">CarRental</h5>
+                            <small class="text-white-50">Админ-панель</small>
+                        </div>
+                    </div>
+                    <button class="btn-close btn-close-white d-md-none" id="closeSidebarBtn"></button>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Дашборд
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Users" ? "active" : "")" href="/Admin/Users">
+                            <i class="fas fa-users me-2"></i>Пользователи
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Cars" ? "active" : "")" href="/Admin/Cars">
+                            <i class="fas fa-car me-2"></i>Автомобили
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Bookings" ? "active" : "")" href="/Admin/Bookings">
+                            <i class="fas fa-calendar-check me-2"></i>Бронирования
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Calendar" ? "active" : "")" href="/Admin/Calendar">
+                            <i class="fas fa-calendar-alt me-2"></i> Календарь бронирования
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Documents" ? "active" : "")" href="/Admin/Documents">
+                            <i class="fas fa-file-alt me-2"></i>Документы
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Content" ? "active" : "")" href="/Admin/Content">
+                            <i class="fas fa-newspaper me-2"></i>Контент
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Faq" ? "active" : "")" href="/Admin/Faq">
+                            <i class="fas fa-question-circle me-2"></i>FAQ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")" href="/Admin/Chat">
+                            <i class="fas fa-comments me-2"></i>Онлайн-чат
+                            <span id="unreadChatsBadge" class="badge bg-danger d-none">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Settings" ? "active" : "")" href="/Admin/Settings">
+                            <i class="fas fa-cog me-2"></i>Настройки
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Logs" ? "active" : "")" href="/Admin/Logs">
+                            <i class="fas fa-terminal me-2"></i>Консоль
+                        </a>
+                    </li>
+                </ul>
+                <hr class="text-white-50 mx-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-external-link-alt me-2"></i>На сайт</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/Account/Logout"><i class="fas fa-sign-out-alt me-2"></i>Выйти</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main content -->
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <h4 class="mb-0">@ViewData["Title"]</h4>
+                <span class="text-muted d-none d-md-inline">
+                    <i class="fas fa-user-circle me-1"></i>@User.Identity?.Name
+                </span>
+            </header>
+            <div class="admin-content">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <!-- Скрипты -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+    
+    <!-- Админские скрипты -->
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script src="~/js/admin-chat.js" asp-append-version="true"></script>
+    
+    <script>
+        // Мобильное меню
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggleBtn = document.getElementById('mobileMenuToggle');
+        const closeBtn = document.getElementById('closeSidebarBtn');
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('show');
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        }
+
+        toggleBtn?.addEventListener('click', openSidebar);
+        closeBtn?.addEventListener('click', closeSidebar);
+        overlay?.addEventListener('click', closeSidebar);
+
+        // Закрывать меню при клике на ссылку (на мобильных)
+        sidebar.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 768) closeSidebar();
+            });
+        });
+
+        // Инициализация DataTables (если требуется)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof $.fn.DataTable !== 'undefined') {
+                $('table:not(.no-datatables)').each(function() {
+                    if (!$.fn.DataTable.isDataTable(this)) {
+                        $(this).DataTable({
+                            language: { url: '/lib/datatables/i18n/ru.json' },
+                            pageLength: 25,
+                            responsive: true
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
+    @Html.AntiForgeryToken()
+</body>
+</html>

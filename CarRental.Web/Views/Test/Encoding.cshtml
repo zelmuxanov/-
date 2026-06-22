@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "Тест кодировки";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">CarRental</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="#">Главная</a>
+                <a class="nav-link" href="#">Каталог</a>
+                <a class="nav-link" href="#">Регистрация</a>
+                <a class="nav-link" href="#">Войти</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <h1>Тест кодировки UTF-8</h1>
+        <div class="alert alert-success">
+            <h4>Если вы видите русские символы правильно - кодировка работает!</h4>
+            <p>Главная | Каталог | Регистрация | Войти</p>
+        </div>
+        <div class="alert alert-info">
+            <h4>Проверка символов:</h4>
+            <p>Привет мир! Hello World! こんにちは世界！</p>
+        </div>
+    </div>
+</body>
+</html>

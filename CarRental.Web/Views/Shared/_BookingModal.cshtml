@@ -1,0 +1,251 @@
+@model (CarRental.BLL.DTOs.Car.CarDto Car, CarRental.Web.ViewModels.Car.BookCarViewModel BookingModel, bool IsAuthenticated)
+
+@{
+    var car = Model.Car;
+    var bookingModel = Model.BookingModel;
+    var isAuthenticated = Model.IsAuthenticated;
+}
+
+<div class="modal booking-modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Бронирование автомобиля</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if (isAuthenticated && bookingModel != null)
+                {
+                    <form method="post" action="@Url.Action("BookCar", "Car")" id="bookingForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="CarId" value="@car?.Id" />
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h5>@car?.Brand @car?.Model</h5>
+                                <p class="text-muted mb-0">@car?.Class • @car?.Year</p>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="car-price-modern mb-0">@car?.PricePerDay.ToString("C0")<span>/сутки</span></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Даты бронирования -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Дата начала *</label>
+                                <input type="date" class="form-control" 
+                                       name="StartDate" 
+                                       id="StartDate"
+                                       min="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")"
+                                       value="@bookingModel.StartDate.ToString("yyyy-MM-dd")"
+                                       required>
+                                <small class="text-muted">Не ранее завтрашнего дня</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Дата окончания *</label>
+                                <input type="date" class="form-control" 
+                                       name="EndDate" 
+                                       id="EndDate"
+                                       min="@DateTime.Today.AddDays(4).ToString("yyyy-MM-dd")"
+                                       value="@bookingModel.EndDate.ToString("yyyy-MM-dd")"
+                                       required>
+                                <small class="text-muted">Минимальный срок - от 1 дня</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Дополнительные услуги -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Дополнительные услуги</h6>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input booking-option" type="checkbox" id="needDelivery" name="NeedDelivery" value="true" data-price="0" data-calculation="once">
+                                <label class="form-check-label" for="needDelivery">
+                                    Доставка автомобиля
+                                </label>
+                                <small class="text-muted d-block">Бесплатная доставка в пределах города</small>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input booking-option" type="checkbox" id="unlimitedMileage" name="UnlimitedMileage" value="true" data-price="2000" data-calculation="daily">
+                                <label class="form-check-label" for="unlimitedMileage">
+                                    Безлимитный пробег
+                                </label>
+                                <small class="text-muted d-block">+2 000 ₽/сутки</small>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input booking-option" type="checkbox" id="fullInsurance" name="FullInsurance" value="true" data-price="1500" data-calculation="daily">
+                                <label class="form-check-label" for="fullInsurance">
+                                    Полная страховка
+                                </label>
+                                <small class="text-muted d-block">+1 500 ₽/сутки</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Итоговая стоимость -->
+                        <div class="booking-summary-modern">
+                            <div class="booking-details-grid">
+                                <div class="booking-detail-item">
+                                    <span class="booking-detail-label">Период аренды</span>
+                                    <span class="booking-detail-value" id="rentalPeriod">от 1 дня</span>
+                                </div>
+                                <div class="booking-detail-item">
+                                    <span class="booking-detail-label">Цена за сутки</span>
+                                    <span class="booking-detail-value">@car?.PricePerDay.ToString("N0") ₽</span>
+                                </div>
+                                <div class="booking-detail-item">
+                                    <span class="booking-detail-label">Доп. услуги</span>
+                                    <span class="booking-detail-value" id="extraServices">0 ₽</span>
+                                </div>
+                            </div>
+                            <div class="booking-total">
+                                <span class="booking-total-label">Итого:</span>
+                                <span class="booking-total-price" id="totalPrice">@((car?.PricePerDay)?.ToString("N0")) ₽</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки -->
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn-primary-modern btn-modern flex-grow-1">
+                                <i class="fas fa-check me-2"></i>
+                                Подтвердить бронирование
+                            </button>
+                            <button type="button" class="btn-outline-modern btn-modern" data-bs-dismiss="modal">
+                                Отмена
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <script>
+                        // Калькулятор стоимости бронирования
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const pricePerDay = @car?.PricePerDay ?? 0;
+                            const startDateInput = document.getElementById('StartDate');
+                            const endDateInput = document.getElementById('EndDate');
+                            const extraServices = document.getElementById('extraServices');
+                            const rentalPeriod = document.getElementById('rentalPeriod');
+                            const totalPrice = document.getElementById('totalPrice');
+                            
+                            function calculateTotal() {
+                                if (!startDateInput || !endDateInput) return;
+                                
+                                const start = new Date(startDateInput.value);
+                                const end = new Date(endDateInput.value);
+                                
+                                if (isNaN(start) || isNaN(end)) return;
+                                
+                                // Расчет количества дней
+                                const days = Math.max(Math.ceil((end - start) / (1000 * 60 * 60 * 24)), 1);
+                                
+                                // Базовая стоимость
+                                let total = pricePerDay * days;
+                                let extras = 0;
+                                
+                                // Дополнительные услуги
+                                document.querySelectorAll('.booking-option:checked').forEach(option => {
+                                    const price = parseFloat(option.dataset.price) || 0;
+                                    const calculation = option.dataset.calculation;
+                                    extras += calculation === 'daily' ? price * days : price;
+                                });
+                                
+                                total += extras;
+                                
+                                // Обновление отображения
+                                if (rentalPeriod) rentalPeriod.textContent = days + ' дней';
+                                if (extraServices) extraServices.textContent = extras.toLocaleString('ru-RU') + ' ₽';
+                                if (totalPrice) totalPrice.textContent = total.toLocaleString('ru-RU') + ' ₽';
+                            }
+                            
+                            // Слушатели событий
+                            if (startDateInput) startDateInput.addEventListener('change', calculateTotal);
+                            if (endDateInput) endDateInput.addEventListener('change', calculateTotal);
+                            
+                            document.querySelectorAll('.booking-option').forEach(option => {
+                                option.addEventListener('change', calculateTotal);
+                            });
+                            
+                            // Инициализация
+                            calculateTotal();
+                            
+                            // AJAX отправка формы
+                            const bookingForm = document.getElementById('bookingForm');
+                            if (bookingForm) {
+                                bookingForm.addEventListener('submit', async function(e) {
+                                    e.preventDefault();
+                                    
+                                    const formData = new FormData(this);
+                                    const submitBtn = this.querySelector('[type="submit"]');
+                                    const originalText = submitBtn.innerHTML;
+                                    
+                                    // Показываем загрузку
+                                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Обработка...';
+                                    submitBtn.disabled = true;
+                                    
+                                    try {
+                                        const response = await fetch(this.action, {
+                                            method: 'POST',
+                                            body: formData,
+                                            headers: {
+                                                'X-Requested-With': 'XMLHttpRequest',
+                                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                            }
+                                        });
+                                        
+                                        const result = await response.json();
+                                        
+                                        if (result.success) {
+                                            // Успех
+                                            if (typeof showNotification === 'function') {
+                                                showNotification('✅ ' + result.message, 'success');
+                                            } else {
+                                                alert('✅ ' + result.message);
+                                            }
+                                            
+                                            // Закрываем модальное окно
+                                            const modal = bootstrap.Modal.getInstance(document.getElementById('bookingModal'));
+                                            if (modal) modal.hide();
+                                            
+                                            // Редирект через 1.5 секунды
+                                            setTimeout(() => {
+                                                if (result.redirectUrl) {
+                                                    window.location.href = result.redirectUrl;
+                                                }
+                                            }, 1500);
+                                        } else {
+                                            // Ошибка
+                                            if (typeof showNotification === 'function') {
+                                                showNotification('❌ ' + result.message, 'error');
+                                            } else {
+                                                alert('❌ ' + result.message);
+                                            }
+                                            submitBtn.innerHTML = originalText;
+                                            submitBtn.disabled = false;
+                                        }
+                                    } catch (error) {
+                                        console.error('Ошибка:', error);
+                                        if (typeof showNotification === 'function') {
+                                            showNotification('❌ Произошла ошибка при отправке формы', 'error');
+                                        } else {
+                                            alert('❌ Произошла ошибка при отправке формы');
+                                        }
+                                        submitBtn.innerHTML = originalText;
+                                        submitBtn.disabled = false;
+                                    }
+                                });
+                            }
+                        });
+                    </script>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <p class="lead">Для бронирования необходимо войти в систему</p>
+                        <div class="mt-3">
+                            <a href="/Account/Login" class="btn btn-primary me-2">Войти</a>
+                            <a href="/Account/Register" class="btn btn-success">Зарегистрироваться</a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

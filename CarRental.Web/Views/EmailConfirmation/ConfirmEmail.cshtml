@@ -1,0 +1,125 @@
+@model CarRental.Web.ViewModels.Account.ConfirmEmailViewModel
+@{
+    ViewData["Title"] = Model.IsSuccess ? "Email подтвержден" : "Ошибка подтверждения";
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-@(Model.IsSuccess ? "success" : "danger") text-white">
+                    <h4 class="mb-0">
+                        @(Model.IsSuccess ? "✅ Email подтвержден" : "❌ Ошибка подтверждения")
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    @if (Model.IsSuccess)
+                    {
+                        <div class="text-center mb-4">
+                            <div class="display-1 text-success mb-3">
+                                <i class="bi bi-check-circle-fill"></i>
+                            </div>
+                            <h2 class="text-success mb-3">Успешное подтверждение!</h2>
+                        </div>
+                        
+                        <div class="alert alert-success" role="alert">
+                            <h5 class="alert-heading">🎉 Поздравляем!</h5>
+                            <p class="mb-0">Ваш email <strong>@Model.Email</strong> успешно подтвержден.</p>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h5>Что дальше?</h5>
+                            <ul class="mb-0">
+                                <li>Теперь вы можете войти в систему</li>
+                                <li>Полный доступ ко всем функциям аренды</li>
+                                <li>Получать уведомления о бронированиях</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <a href="@Url.Action("Login", "Account")" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                Войти в систему
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center mb-4">
+                            <div class="display-1 text-danger mb-3">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <h2 class="text-danger mb-3">Ошибка подтверждения</h2>
+                        </div>
+                        
+                        <div class="alert alert-danger" role="alert">
+                            <h5 class="alert-heading">⚠️ Что-то пошло не так</h5>
+                            <p class="mb-2">@Model.Message</p>
+                            <hr>
+                            <p class="mb-0">Возможные причины:</p>
+                            <ul class="mb-0">
+                                <li>Ссылка устарела (действует 24 часа)</li>
+                                <li>Email уже был подтвержден ранее</li>
+                                <li>Некорректная ссылка подтверждения</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("ResendConfirmation", "Account")" 
+                                       class="btn btn-outline-primary w-100">
+                                        <i class="bi bi-envelope me-2"></i>
+                                        Отправить подтверждение повторно
+                                    </a>
+                                </div>
+                                <div class="col-md-6">
+                                    <a href="@Url.Action("Login", "Account")" 
+                                       class="btn btn-primary w-100">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i>
+                                        Перейти к входу
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                
+                <div class="card-footer text-muted text-center">
+                    <small>
+                        В случае проблем свяжитесь с поддержкой: 
+                        <a href="mailto:support@orental.bizml.ru">support@orental.bizml.ru</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .display-1 {
+        font-size: 5rem;
+    }
+    
+    .alert ul {
+        padding-left: 20px;
+        margin-bottom: 0;
+    }
+    
+    .btn-lg {
+        padding: 12px 30px;
+        font-size: 1.1rem;
+    }
+</style>

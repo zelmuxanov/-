@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Ошибка";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+            <h1 class="text-danger">Ой! Что-то пошло не так</h1>
+            <p class="lead">Произошла непредвиденная ошибка. Мы уже работаем над её исправлением.</p>
+            
+            @if (ViewBag.ErrorId != null)
+            {
+                <div class="alert alert-info">
+                    <strong>ID ошибки:</strong> <code>@ViewBag.ErrorId</code>
+                </div>
+            }
+
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-warning">
+                    <strong>Описание:</strong> @ViewBag.ErrorMessage
+                </div>
+            }
+
+            <div class="mt-4">
+                <a href="/" class="btn btn-primary">Вернуться на главную</a>
+                <a href="javascript:history.back()" class="btn btn-secondary">Назад</a>
+            </div>
+        </div>
+    </div>
+</div>

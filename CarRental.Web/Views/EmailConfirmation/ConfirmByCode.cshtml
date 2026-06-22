@@ -1,0 +1,100 @@
+@model CarRental.Web.ViewModels.Account.ConfirmByCodeViewModel
+@{
+    ViewData["Title"] = "Подтверждение email по коду";
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Подтверждение email
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    
+                    <p class="text-muted mb-4">
+                        Введите 6-значный код, который был отправлен на ваш email.
+                    </p>
+                    
+                    <form method="post" asp-action="ConfirmByCode">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3">
+                            <label for="Email" class="form-label fw-bold">Email</label>
+                            <input type="email" id="Email" name="Email" class="form-control" value="@Model.Email" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="Code" class="form-label fw-bold">Код подтверждения</label>
+                            <input type="text" id="Code" name="Code" class="form-control" 
+                                   maxlength="6" placeholder="123456" />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                            <div class="form-text">6 цифр из письма</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Подтвердить
+                            </button>
+                            
+                            <a href="@Url.Action("ResendConfirmation", "EmailConfirmation")" 
+                                class="btn btn-outline-secondary">
+                                <i class="bi bi-envelope me-2"></i>
+                                Отправить код повторно
+                            </a>
+                            
+                            <a href="@Url.Action("Login", "Account")" 
+                               class="btn btn-link text-decoration-none">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Вернуться к входу
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-muted text-center">
+                    <small>
+                        Не получили код? Проверьте папку "Спам" или 
+                        <a href="@Url.Action("ResendConfirmation", "Account")">запросите новый</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        $(document).ready(function() {
+            // Автоматическая фокусировка на поле кода
+            $('#Code').focus();
+            
+            // Ограничение ввода только цифр
+            $('#Code').on('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+        });
+    </script>
+}

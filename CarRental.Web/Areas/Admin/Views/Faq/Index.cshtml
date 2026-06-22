@@ -1,0 +1,264 @@
+@model CarRental.Web.ViewModels.Admin.FaqIndexViewModel
+@{
+    ViewData["Title"] = "Управление FAQ";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-question-circle me-2"></i>@ViewData["Title"]
+    </h1>
+    <div>
+        <a asp-area="Admin" asp-controller="Faq" asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Добавить вопрос
+        </a>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Категория</label>
+                <select name="category" class="form-select">
+                    <option value="">Все категории</option>
+                    @foreach (var cat in Model.Categories)
+                    {
+                        <option value="@cat" selected="@(Model.CategoryFilter == cat)">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Статус</label>
+                <select name="isActive" class="form-select">
+                    <option value="">Все</option>
+                    <option value="true" selected="@(Model.IsActiveFilter == true)">Активные</option>
+                    <option value="false" selected="@(Model.IsActiveFilter == false)">Неактивные</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Поиск</label>
+                <input type="text" name="search" class="form-control" placeholder="Поиск по вопросу..." value="@Model.Search">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>Фильтровать
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Сообщения -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Список -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Список вопросов</h5>
+        <span class="badge bg-primary">Всего: @Model.TotalCount</span>
+    </div>
+
+    @if (Model.Faqs.Any())
+    {
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="50">Порядок</th>
+                            <th>Вопрос</th>
+                            <th>Категория</th>
+                            <th>Статус</th>
+                            <th>Дата создания</th>
+                            <th width="100">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sortable-faqs">
+                        @foreach (var faq in Model.Faqs)
+                        {
+                            <tr data-id="@faq.Id">
+                                <td>
+                                    <span class="handle" style="cursor: move;">
+                                        <i class="fas fa-bars text-muted"></i>
+                                    </span>
+                                    @faq.DisplayOrder
+                                </td>
+                                <td>@faq.Question</td>
+                                <td>@faq.Category</td>
+                                <td>
+                                    <button class="btn btn-sm @(faq.IsActive ? "btn-success" : "btn-secondary") toggle-status"
+                                            data-id="@faq.Id">
+                                        @(faq.IsActive ? "Активен" : "Неактивен")
+                                    </button>
+                                </td>
+                                <td>@faq.CreatedAt.ToString("dd.MM.yyyy")</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-area="Admin" asp-controller="Faq" asp-action="Edit" asp-route-id="@faq.Id"
+                                           class="btn btn-outline-primary" title="Редактировать">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger delete-faq" data-id="@faq.Id" data-question="@faq.Question" title="Удалить">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Пагинация -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Навигация по страницам">
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-link"
+                                   asp-area="Admin" asp-controller="Faq" asp-action="Index"
+                                   asp-route-page="@i"
+                                   asp-route-pageSize="@Model.PageSize"
+                                   asp-route-category="@Model.CategoryFilter"
+                                   asp-route-isActive="@Model.IsActiveFilter"
+                                   asp-route-search="@Model.Search">
+                                    @i
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card-body text-center py-5">
+            <i class="fas fa-question-circle fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-0">Вопросы не найдены</p>
+            <a asp-area="Admin" asp-controller="Faq" asp-action="Create" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-1"></i>Добавить первый вопрос
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(function() {
+            // Переключение статуса
+            $('.toggle-status').on('click', function() {
+                const $btn = $(this);
+                const faqId = $btn.data('id');
+
+                $.post('/Admin/Faq/ToggleStatus/' + faqId)
+                    .done(function(data) {
+                        if (data.success) {
+                            if (data.isActive) {
+                                $btn.removeClass('btn-secondary').addClass('btn-success').text('Активен');
+                            } else {
+                                $btn.removeClass('btn-success').addClass('btn-secondary').text('Неактивен');
+                            }
+                            showToast('success', 'Статус изменен');
+                        } else {
+                            showToast('error', 'Ошибка', data.message);
+                        }
+                    })
+                    .fail(function() {
+                        showToast('error', 'Ошибка', 'Не удалось изменить статус');
+                    });
+            });
+
+            // Удаление
+            $('.delete-faq').on('click', function() {
+                const faqId = $(this).data('id');
+                const question = $(this).data('question');
+
+                if (confirm(`Удалить вопрос "${question}"?`)) {
+                    $.post('/Admin/Faq/Delete/' + faqId, { __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() })
+                        .done(function(data) {
+                            if (data.success) {
+                                showToast('success', 'Успешно', data.message);
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                showToast('error', 'Ошибка', data.message);
+                            }
+                        })
+                        .fail(function() {
+                            showToast('error', 'Ошибка', 'Не удалось удалить вопрос');
+                        });
+                }
+            });
+
+            // Сортировка
+            if ($('#sortable-faqs').length) {
+                $('#sortable-faqs').sortable({
+                    handle: '.handle',
+                    update: function(event, ui) {
+                        const orders = {};
+                        $('#sortable-faqs tr').each(function(index) {
+                            const id = $(this).data('id');
+                            orders[id] = index + 1;
+                        });
+
+                        $.ajax({
+                            url: '/Admin/Faq/Reorder',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(orders),
+                            headers: {
+                                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function() {
+                                showToast('success', 'Порядок сохранён');
+                                $('#sortable-faqs tr').each(function(index) {
+                                    $(this).find('td:first').text(index + 1);
+                                });
+                            },
+                            error: function() {
+                                showToast('error', 'Ошибка', 'Не удалось сохранить порядок');
+                            }
+                        });
+                    }
+                });
+            }
+
+            function showToast(type, title, message) {
+                const toastId = 'toast-' + Date.now();
+                const toast = `<div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">${message || title}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>`;
+                const $container = $('<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050"></div>');
+                $container.html(toast);
+                $('body').append($container);
+                const toastEl = $container.find('.toast')[0];
+                const bsToast = new bootstrap.Toast(toastEl);
+                bsToast.show();
+                setTimeout(() => {
+                    bsToast.hide();
+                    setTimeout(() => $container.remove(), 500);
+                }, 3000);
+            }
+        });
+    </script>
+}

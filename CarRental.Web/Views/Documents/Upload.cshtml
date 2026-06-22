@@ -1,0 +1,99 @@
+@model CarRental.Web.ViewModels.DocumentUploadViewModel
+@using CarRental.Domain.Enums
+@{
+    ViewData["Title"] = Model.DocumentType == DocumentType.Passport ? "Загрузка паспорта" : "Загрузка водительского удостоверения";
+    Layout = "_Layout";
+}
+
+<div class="container-xxl py-4">
+    <div class="row">
+        <div class="col-lg-3">
+            <!-- навигация как раньше -->
+        </div>
+        <div class="col-lg-9">
+            <h2 class="mb-4">@ViewData["Title"]</h2>
+            <div class="card-modern">
+                <div class="card-body-modern">
+                    @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+                    }
+
+                    <form action="/Documents/Upload" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="DocumentType" value="@Model.DocumentType" />
+
+                        @if (Model.DocumentType == DocumentType.Passport)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Серия и номер паспорта</label>
+                                <input name="DocumentNumber" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Дата выдачи</label>
+                                <input name="IssueDate" type="date" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Кем выдан</label>
+                                <input name="IssuedBy" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Дата рождения</label>
+                                <input name="BirthDate" class="form-control" placeholder="ДД.ММ.ГГГГ" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Место рождения</label>
+                                <input name="PlaceOfBirth" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Адрес регистрации</label>
+                                <textarea name="RegistrationAddress" class="form-control" rows="2"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Фото паспорта (лицевая сторона)</label>
+                                <input name="File" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Фото прописки (страница с регистрацией)</label>
+                                <input name="File2" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
+                            </div>
+                        }
+                        else if (Model.DocumentType == DocumentType.DriverLicense)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Серия и номер ВУ</label>
+                                <input name="DocumentNumber" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Дата выдачи</label>
+                                <input name="IssueDate" type="date" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Срок действия</label>
+                                <input name="ExpiryDate" type="date" class="form-control" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Фото прав (лицевая сторона)</label>
+                                <input name="File" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Фото прав (оборотная сторона)</label>
+                                <input name="File2" type="file" class="form-control" accept=".jpg,.jpeg,.png,.pdf" />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Комментарий (необязательно)</label>
+                            <textarea name="Description" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="/Documents" class="btn btn-outline-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Загрузить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

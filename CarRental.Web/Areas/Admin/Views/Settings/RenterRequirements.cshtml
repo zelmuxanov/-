@@ -1,0 +1,84 @@
+@model CarRental.Web.ViewModels.Admin.RenterRequirementsViewModel
+@{
+    ViewData["Title"] = "Требования к арендатору";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Условия, которые отображаются в карточке автомобиля</h5>
+        <p class="text-muted mb-0 mt-1">Клиент видит эти требования перед бронированием</p>
+    </div>
+    <div class="card-body">
+        <form method="post" id="requirementsForm">
+            @Html.AntiForgeryToken()
+
+            <div id="requirementsContainer">
+                @for (int i = 0; i < Model.Requirements.Count; i++)
+                {
+                    <div class="requirement-row row mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label">Условие (вопрос)</label>
+                            <input type="text" name="Requirements[@i].Question" class="form-control" 
+                                   value="@Model.Requirements[i].Question" placeholder="Например: Водительский стаж?" />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Ожидаемый ответ</label>
+                            <input type="text" name="Requirements[@i].ExpectedAnswer" class="form-control" 
+                                   value="@Model.Requirements[i].ExpectedAnswer" placeholder="Например: от 3 лет" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-row">Удалить</button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button type="button" id="addRequirementBtn" class="btn btn-outline-primary mb-3">
+                <i class="fas fa-plus"></i> Добавить требование
+            </button>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <a href="@Url.Action("Index", "Settings")" class="btn btn-secondary">Назад</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let index = @Model.Requirements.Count;
+
+        document.getElementById('addRequirementBtn').addEventListener('click', function() {
+            const container = document.getElementById('requirementsContainer');
+            const newRow = document.createElement('div');
+            newRow.className = 'requirement-row row mb-3';
+            newRow.innerHTML = `
+                <div class="col-md-5">
+                    <label class="form-label">Условие (вопрос)</label>
+                    <input type="text" name="Requirements[${index}].Question" class="form-control" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Ожидаемый ответ</label>
+                    <input type="text" name="Requirements[${index}].ExpectedAnswer" class="form-control" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-row">Удалить</button>
+                </div>
+            `;
+            container.appendChild(newRow);
+            index++;
+        });
+
+        document.getElementById('requirementsContainer').addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-row')) {
+                e.target.closest('.requirement-row').remove();
+            }
+        });
+    </script>
+}

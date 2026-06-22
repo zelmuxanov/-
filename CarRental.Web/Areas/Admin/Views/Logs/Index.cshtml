@@ -1,0 +1,53 @@
+@using CarRental.BLL.Services
+@model IReadOnlyCollection<InMemoryLogEntry>
+@{
+    ViewData["Title"] = "Консоль ошибок и предупреждений";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="fas fa-terminal me-2"></i>@ViewData["Title"]</h1>
+    <div class="btn-group">
+        <a href="?level=error" class="btn btn-outline-danger @(ViewBag.CurrentLevel == "error" ? "active" : "")">Ошибки</a>
+        <a href="?level=warning" class="btn btn-outline-warning @(ViewBag.CurrentLevel == "warning" ? "active" : "")">Предупреждения</a>
+        <a href="?" class="btn btn-outline-secondary @(string.IsNullOrEmpty(ViewBag.CurrentLevel) ? "active" : "")">Все</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+            <table class="table table-sm table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Время</th>
+                        <th style="width: 80px;">Уровень</th>
+                        <th>Сообщение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in Model)
+                    {
+                        var rowClass = entry.Level switch
+                        {
+                            LogLevel.Error or LogLevel.Critical => "table-danger",
+                            LogLevel.Warning => "table-warning",
+                            _ => ""
+                        };
+                        <tr class="@rowClass">
+                            <td><small>@entry.Timestamp.ToString("dd.MM.yyyy HH:mm:ss")</small></td>
+                            <td><span class="badge @(entry.Level >= LogLevel.Error ? "bg-danger" : entry.Level == LogLevel.Warning ? "bg-warning text-dark" : "bg-secondary")">@entry.Level</span></td>
+                            <td>
+                                <small>[@entry.Category] @entry.Message</small>
+                                @if (!string.IsNullOrEmpty(entry.Exception))
+                                {
+                                    <pre class="small text-muted mb-0 mt-1" style="white-space: pre-wrap;">@entry.Exception</pre>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

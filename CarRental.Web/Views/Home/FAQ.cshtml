@@ -1,0 +1,90 @@
+@model IEnumerable<CarRental.BLL.DTOs.Faq.FaqDto>
+@{
+    ViewData["Title"] = "Часто задаваемые вопросы";
+    Layout = "_Layout";
+    var grouped = Model.Where(f => f.IsActive).OrderBy(f => f.DisplayOrder).GroupBy(f => f.Category ?? "Общие вопросы");
+}
+
+<div class="container-xxl py-5">
+    <div class="text-center mb-5 fade-in-up">
+        <h1 class="display-5 fw-bold text-gradient">Часто задаваемые вопросы</h1>
+        <p class="lead text-muted">Ответы на самые популярные вопросы об аренде автомобилей</p>
+    </div>
+
+    @if (!grouped.Any())
+    {
+        <div class="alert alert-info text-center">Пока нет вопросов. Задайте их нам через форму обратной связи.</div>
+    }
+    else
+    {
+        <!-- Навигация по категориям -->
+        <div class="d-flex justify-content-center gap-3 mb-5 flex-wrap">
+            @foreach (var group in grouped)
+            {
+                var categoryId = @group.Key.Replace(" ", "");
+                <a href="#@categoryId" class="btn-outline-modern btn-modern">@group.Key</a>
+            }
+        </div>
+
+        @foreach (var group in grouped)
+        {
+            var categoryId = @group.Key.Replace(" ", "");
+            <section id="@categoryId" class="mb-5">
+                <h2 class="h3 mb-4 pb-2 border-bottom border-primary">@group.Key</h2>
+                <div class="accordion" id="accordion-@categoryId">
+                    @foreach (var item in group)
+                    {
+                        <div class="accordion-item card-modern mb-3">
+                            <h2 class="accordion-header" id="heading-@item.Id">
+                                <button class="accordion-button collapsed bg-transparent" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapse-@item.Id"
+                                        aria-expanded="false" aria-controls="collapse-@item.Id">
+                                    @item.Question
+                                </button>
+                            </h2>
+                            <div id="collapse-@item.Id" class="accordion-collapse collapse"
+                                 data-bs-parent="#accordion-@categoryId">
+                                <div class="accordion-body">
+                                    @Html.Raw(item.Answer.Replace("\n", "<br>"))
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    }
+</div>
+
+<style>
+    /* Улучшения для аккордеона в стиле сайта */
+    .accordion-item.card-modern {
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: var(--bg-card);
+        overflow: hidden;
+    }
+    .accordion-button {
+        background: transparent;
+        color: var(--text-primary);
+        font-weight: 500;
+        box-shadow: none;
+        padding: 1.25rem;
+    }
+    .accordion-button:not(.collapsed) {
+        background: rgba(var(--primary-rgb), 0.05);
+        color: var(--primary);
+    }
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: var(--primary);
+    }
+    .accordion-button::after {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%232563eb'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+    }
+    .accordion-body {
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        padding: 1.5rem;
+    }
+</style>

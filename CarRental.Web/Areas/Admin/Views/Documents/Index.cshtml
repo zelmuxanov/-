@@ -1,0 +1,117 @@
+@model IEnumerable<CarRental.BLL.DTOs.Document.DocumentDto>
+@{
+    ViewData["Title"] = "Документы на проверку";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    Guid? filterUserId = ViewBag.FilterUserId as Guid?;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        @if (filterUserId.HasValue)
+        {
+            <span>Документы пользователя</span>
+        }
+        else
+        {
+            <span>Документы на проверку</span>
+        }
+    </h1>
+    <div>
+        @if (filterUserId.HasValue)
+        {
+            <a href="@Url.Action("Details", "Users", new { area = "Admin", id = filterUserId })" class="btn btn-outline-info me-2">
+                <i class="fas fa-user me-2"></i>К пользователю
+            </a>
+            <a asp-area="Admin" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-list me-2"></i>Все на проверку
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Сообщения -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">
+                    @if (filterUserId.HasValue)
+                    {
+                        <span>У этого пользователя нет документов.</span>
+                    }
+                    else
+                    {
+                        <span>Нет документов, ожидающих проверки.</span>
+                    }
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle no-datatables">
+                    <thead>
+                        <tr>
+                            <th>Пользователь</th>
+                            <th>Тип</th>
+                            <th>Номер</th>
+                            <th>Дата загрузки</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Model.OrderByDescending(d => d.CreatedAt))
+                        {
+                            <tr>
+                                <td>
+                                    <a href="@Url.Action("Details", "Users", new { area = "Admin", id = doc.UserId })" class="text-decoration-none">
+                                        @doc.UserFullName
+                                    </a>
+                                </td>
+                                <td>@GetDocumentTypeName(doc.DocumentType)</td>
+                                <td>@doc.DocumentNumber</td>
+                                <td>@doc.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@doc.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Просмотр
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@functions {
+    string GetDocumentTypeName(CarRental.Domain.Enums.DocumentType type)
+    {
+        return type switch
+        {
+            CarRental.Domain.Enums.DocumentType.Passport => "Паспорт",
+            CarRental.Domain.Enums.DocumentType.DriverLicense => "Водительское удостоверение",
+            CarRental.Domain.Enums.DocumentType.IdentityCard => "Удостоверение личности",
+            CarRental.Domain.Enums.DocumentType.Insurance => "Страховка",
+            _ => "Документ"
+        };
+    }
+}

@@ -1,0 +1,81 @@
+@{
+    ViewData["Title"] = "Настройки системы";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+</div>
+
+<div class="row">
+    <!-- Договоры -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-contract me-2"></i>
+                    Договоры
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Управление шаблоном договора аренды. Загрузите файл .docx с тегами для автоматической генерации PDF.</p>
+                <div class="mt-4">
+                    <a asp-action="Contracts" class="btn btn-success w-100">
+                        <i class="fas fa-upload me-1"></i>
+                        Управление шаблоном
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Общие настройки (заглушка) -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>
+                    Общие настройки
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Основные параметры системы.</p>
+                <div class="mt-4">
+                    <a asp-action="General" class="btn btn-secondary w-100">
+                        <i class="fas fa-cog me-1"></i>
+                        Настроить
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Требования к арендатору.</p>
+                <div class="mt-4">
+                    <a class="btn btn-secondary w-100" href="@Url.Action("RenterRequirements", "Settings", new { area = "Admin" })">
+                        <i class="fas fa-list-check"></i> Задать требования
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Уведомления (заглушка) -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>
+                    Уведомления
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Настройка email-рассылок, Telegram-уведомлений и шаблонов писем.</p>
+                <div class="mt-4">
+                    <button class="btn btn-info w-100" disabled>
+                        <i class="fas fa-clock me-1"></i>
+                        В разработке
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,170 @@
+@model CarRental.Web.ViewModels.Admin.CarCreateViewModel
+@using CarRental.Domain.Enums
+@{
+    ViewData["Title"] = "Добавить автомобиль";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+    <a href="@Url.Action("Index")" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Назад
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <h5>Ошибки валидации:</h5>
+                <ul>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@error.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <form action="/Admin/Cars/Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <!-- БЛОК 1: Основная информация -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Основная информация</h5></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3"><label class="form-label">Марка *</label><input type="text" name="Brand" value="@Model.Brand" class="form-control" required></div>
+                            <div class="mb-3"><label class="form-label">Модель *</label><input type="text" name="Model" value="@Model.Model" class="form-control" required></div>
+                            <div class="mb-3"><label class="form-label">Год выпуска *</label><input type="number" name="Year" value="@Model.Year" class="form-control" min="2000" max="@(DateTime.Now.Year + 1)" required></div>
+                            <div class="mb-3"><label class="form-label">Цвет</label>
+                                <select name="Color" class="form-select">
+                                    <option value="">Выберите цвет</option>
+                                    @foreach (var color in Model.AvailableColors) {
+                                        <option value="@color" selected="@(color == Model.Color)">@color</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3"><label class="form-label">Класс *</label>
+                                <select name="Class" class="form-select" required>
+                                    <option value="">Выберите класс</option>
+                                    @foreach (var carClass in Model.CarClasses) {
+                                        <option value="@carClass" selected="@(carClass == Model.Class)">@GetCarClassDisplay(carClass)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3"><label class="form-label">Тип топлива *</label>
+                                <select name="FuelType" class="form-select" required>
+                                    <option value="">Выберите тип топлива</option>
+                                    @foreach (var fuelType in Model.FuelTypes) {
+                                        <option value="@fuelType" selected="@(fuelType == Model.FuelType)">@GetFuelTypeDisplay(fuelType)</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3"><label class="form-label">Коробка передач *</label>
+                                <select name="Transmission" class="form-select" required>
+                                    <option value="">Выберите коробку передач</option>
+                                    @foreach (var transmission in Model.TransmissionTypes) {
+                                        <option value="@transmission" selected="@(transmission == Model.Transmission)">@GetTransmissionDisplay(transmission)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Госномер *</label><input type="text" name="LicensePlate" id="LicensePlate" class="form-control" placeholder="А000АА000" value="@Model.LicensePlate" /></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">VIN</label><input type="text" name="VIN" id="VIN" class="form-control" maxlength="17" placeholder="17 символов" value="@Model.VIN" /></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Количество мест *</label><input type="number" name="Seats" value="@Model.Seats" class="form-control" min="1" max="20" required></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- БЛОК 2: Цены, депозит, пробег -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0"><i class="fas fa-ruble-sign me-2"></i>Цены, депозит и пробег</h5></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3"><div class="mb-3"><label class="form-label">Цена за сутки (₽) *</label><input type="number" name="PricePerDay" value="@Model.PricePerDay" class="form-control" min="1" required></div></div>
+                        <div class="col-md-3"><div class="mb-3"><label class="form-label">Цена от 15 суток (₽)</label><input type="number" name="PricePerDay15" value="@Model.PricePerDay15" class="form-control" min="0" /></div></div>
+                        <div class="col-md-3"><div class="mb-3"><label class="form-label">Цена от 30 суток (₽)</label><input type="number" name="PricePerDay30" value="@Model.PricePerDay30" class="form-control" min="0" /></div></div>
+                        <div class="col-md-3"><div class="mb-3"><label class="form-label">Депозит (₽)</label><input type="number" name="Deposit" value="@Model.Deposit" class="form-control" min="0" /></div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Лимит пробега (км/сут)</label><input type="number" name="MileageLimitPerDay" value="@Model.MileageLimitPerDay" class="form-control" min="0" /><small class="text-muted">Бесплатный суточный пробег</small></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Цена безлимитного пробега (₽/сут)</label><input type="number" name="UnlimitedMileagePrice" value="@Model.UnlimitedMileagePrice.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" step="0.01" /><small class="text-muted">Стоимость опции «Безлимитный пробег» за сутки</small></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Доплата за превышение (₽/км)</label><input type="number" name="OverMileagePricePerKm" value="@Model.OverMileagePricePerKm.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)" class="form-control" min="0" step="0.01" /><small class="text-muted">Стоимость доплаты за выход из утвержденного тарифа по километражу</small></div></div>
+                        <div class="col-md-4"><div class="mb-3"><label class="form-label">Объем двигателя (л) *</label><input type="text" name="EngineCapacityString" value="@Model.EngineCapacityString" class="form-control" required><small class="text-muted">Например: 1.6, 2.0, 3.5</small></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- БЛОК 3: Описание, фото, доступность -->
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0"><i class="fas fa-pen me-2"></i>Описание и медиа</h5></div>
+                <div class="card-body">
+                    <div class="mb-3"><label class="form-label">Описание</label><textarea name="Description" class="form-control" rows="3">@Model.Description</textarea></div>
+                    <div class="mb-3"><label class="form-label">Фотографии автомобиля (до 10 шт.)</label><input type="file" name="ImageFiles" multiple accept=".jpg,.jpeg,.png,.gif" class="form-control" /><small class="text-muted">Удерживайте Ctrl для выбора нескольких файлов. Первое выбранное фото станет главным.</small></div>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" name="IsAvailable" value="true" class="form-check-input" @(Model.IsAvailable ? "checked" : "")>
+                        <input type="hidden" name="IsAvailable" value="false" />
+                        <label class="form-check-label">Доступен для аренды</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="@Url.Action("Index")" class="btn btn-secondary">Отмена</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@functions {
+    string GetCarClassDisplay(CarClass carClass) => carClass switch
+    {
+        CarClass.Standard => "Стандарт",
+        CarClass.SUV => "Кроссовер",
+        CarClass.Business => "Бизнес",
+        CarClass.Minivan => "Минивэн",
+        _ => carClass.ToString()
+    };
+    string GetFuelTypeDisplay(FuelType fuelType) => fuelType switch
+    {
+        FuelType.Petrol => "Бензин",
+        FuelType.Diesel => "Дизель",
+        FuelType.Hybrid => "Гибрид",
+        _ => fuelType.ToString()
+    };
+    string GetTransmissionDisplay(TransmissionType transmission) => transmission switch
+    {
+        TransmissionType.Manual => "Механика",
+        TransmissionType.Automatic => "Автомат",
+        _ => transmission.ToString()
+    };
+}
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#LicensePlate').inputmask({
+                mask: 'A999AA99[9]',
+                definitions: {
+                    'A': { validator: '[A-Za-zА-Яа-я]', casing: 'upper' }
+                },
+                placeholder: '0',
+                clearIncomplete: true
+            });
+            
+            $('#VIN').inputmask({
+                mask: '*****************',
+                definitions: { '*': { validator: '[A-Z0-9]', casing: 'upper' } },
+                placeholder: '_',
+                clearIncomplete: false
+            });
+        });
+    </script>
+}

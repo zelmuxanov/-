@@ -1,0 +1,118 @@
+@model CarRental.Web.ViewModels.Account.ResendConfirmationViewModel
+@using Microsoft.AspNetCore.Mvc
+@{
+    ViewData["Title"] = "Повторная отправка подтверждения";
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-envelope-check me-2"></i>
+                        Повторная отправка подтверждения
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-info" role="alert">
+                        <h5 class="alert-heading">📧 Не получили письмо?</h5>
+                        <p class="mb-0">
+                            Укажите ваш email, и мы отправим новую ссылку для подтверждения.
+                            Ссылка действительна 24 часа.
+                        </p>
+                    </div>
+                    
+                    <form method="post" asp-controller="EmailConfirmation" asp-action="ResendConfirmation">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email адрес</label>
+                            <input type="email" asp-for="Email" class="form-control form-control-lg" 
+                                   placeholder="Введите ваш email" required>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                @foreach (var state in ViewData.ModelState)
+                                {
+                                    if (state.Value.Errors.Any())
+                                    {
+                                        foreach (var modelError in state.Value.Errors)
+                                        {
+                                            <p class="mb-1">@modelError.ErrorMessage</p>
+                                        }
+                                    }
+                                }
+                            </div>
+                        }
+                        
+                        @if (TempData["Message"] != null)
+                        {
+                            <div class="alert alert-success">
+                                @TempData["Message"]
+                            </div>
+                        }
+                        
+                        @if (TempData["Error"] != null)
+                        {
+                            <div class="alert alert-danger">
+                                @TempData["Error"]
+                            </div>
+                        }
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send me-2"></i>
+                                Отправить подтверждение
+                            </button>
+                            
+                            <a href="@Url.Action("Login", "Account")" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>
+                                Назад к входу
+                            </a>
+                            
+                            <a href="@Url.Action("Register", "Account")" class="btn btn-link text-decoration-none">
+                                <i class="bi bi-person-plus me-1"></i>
+                                Нет аккаунта? Зарегистрироваться
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer text-muted text-center">
+                    <small>
+                        Проверьте папку "Спам" если не видите письмо.
+                        <a href="mailto:support@orental.bizml.ru">Написать в поддержку</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+    }
+    
+    .form-control-lg {
+        padding: 12px 15px;
+        font-size: 1.1rem;
+    }
+    
+    .btn-lg {
+        padding: 12px 30px;
+        font-size: 1.1rem;
+    }
+</style>

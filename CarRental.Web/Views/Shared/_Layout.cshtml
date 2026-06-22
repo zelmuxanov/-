@@ -1,0 +1,580 @@
+@using CarRental.BLL.Interfaces.Services
+@inject ISiteSettingsService SiteSettings
+@{
+    var settings = SiteSettings.GetSettings();
+}
+
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){
+            m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+            m[i].l=1*new Date();
+            for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+            k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+        })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=110066542', 'ym');
+
+        ym(110066542, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/110066542" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - О! Прокат | Аренда автомобилей в Москве и Московской области</title>
+    <meta name="description" content="Аренда автомобилей в Одинцово и Москве без водителя. Большой выбор машин: от стандарта до бизнес-класса. Низкие цены, быстрое оформление. Забронируйте онлайн!" />
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-css-reset/dist/reset.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #64748b;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --primary-rgb: 37, 99, 235;
+            --accent-rgb: 245, 158, 11;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-navbar: rgba(255, 255, 255, 0.95);
+            --bg-footer: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --text-footer: #64748b;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.25rem;
+            --transition-fast: 150ms ease;
+            --transition-normal: 300ms ease;
+            --transition-slow: 500ms ease;
+            --navbar-height: 4.5rem;
+            --sidebar-width: 280px;
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #94a3b8;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #60a5fa;
+            --primary-rgb: 59, 130, 246;
+            --accent-rgb: 245, 158, 11;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --bg-navbar: rgba(15, 23, 42, 0.95);
+            --bg-footer: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --text-footer: #cbd5e1;
+            --border-color: #334155;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+    
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="theme-toggle-container">
+        <button class="theme-toggle-btn" id="themeToggle" aria-label="Переключить тему">
+            <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+    </div>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-modern">
+            <div class="container-fluid">
+                <a class="navbar-brand-modern" href="/">
+                    @if (!string.IsNullOrEmpty(settings.LogoUrl) && settings.LogoUrl != "/images/default-logo.png")
+                    {
+                        <img src="@settings.LogoUrl" alt="@settings.CompanyName" style="height: 40px;" />
+                    }
+                    else
+                    {
+                        <i class="fas fa-car"></i>
+                        <span>@settings.CompanyName</span>
+                    }
+                </a>
+
+                <button class="navbar-toggler d-lg-none ms-auto" type="button" id="mobileMenuToggle" aria-label="Меню">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="desktop-nav d-none d-lg-flex align-items-center w-100">
+                    <ul class="navbar-nav me-auto flex-row">
+                        <li class="nav-item">
+                            <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")" href="/">Главная</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Car" ? "active" : "")" href="/Car">Автомобили</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link-modern dropdown-toggle" href="#" id="infoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-info-circle me-1"></i> Информация
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg" id="infoPagesMenu">
+                                <li><span class="dropdown-item text-muted"><i class="fas fa-spinner fa-spin me-1"></i> Загрузка...</span></li>
+                            </ul>
+                        </li>
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")" href="/Admin/Dashboard">
+                                        <i class="fas fa-cogs me-1"></i> Панель управления
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Profile" ? "active" : "")" href="/Profile">
+                                        <i class="fas fa-user me-1"></i> Профиль
+                                    </a>
+                                </li>
+                            }
+                        }
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" && ViewContext.RouteData.Values["Area"]?.ToString() == "Admin" ? "active" : "")" href="/Admin/Chat">
+                                        <i class="fas fa-comments me-1"></i> Чаты
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link-modern @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")" href="/Chat/Index">
+                                        <i class="fas fa-comments me-1"></i> Чат
+                                    </a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    
+                    <div class="d-flex align-items-center gap-3">
+                        @if (User?.Identity?.IsAuthenticated == true)
+                        {
+                            <div class="dropdown">
+                                @{
+                                    var userName = User.Identity?.Name;
+                                    var firstLetter = !string.IsNullOrEmpty(userName) ? userName[0].ToString().ToUpper() : "U";
+                                }
+                                <div class="user-avatar dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    @firstLetter
+                                </div>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                                    <li><a class="dropdown-item" href="/Profile"><i class="fas fa-user me-2"></i>Профиль</a></li>
+                                    <li><a class="dropdown-item" href="/Profile/Bookings"><i class="fas fa-calendar me-2"></i>Бронирования</a></li>
+                                    <li><a class="dropdown-item" href="/Documents"><i class="fas fa-file-contract me-2"></i>Документы</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-primary" href="/Admin/Dashboard"><i class="fas fa-cogs me-2"></i>Панель управления</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="/Account/Logout" onclick="return confirm('Вы уверены, что хотите выйти?')">Выйти</a></li>
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <a href="/Account/Login" class="nav-link-modern me-3">Войти</a>
+                            <a href="/Account/Register" class="btn btn-primary px-4 py-2 rounded-pill">Регистрация</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Мобильное меню -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    <div class="mobile-menu-panel" id="mobileMenuPanel">
+        <div class="mobile-menu-header">
+            <h5 class="mb-0">Меню</h5>
+            <button type="button" class="btn-close" id="closeMobileMenu" aria-label="Закрыть"></button>
+        </div>
+        <div class="mobile-menu-body"></div>
+    </div>
+
+    <!-- Соцсети для мобильных -->
+    @if (!string.IsNullOrEmpty(settings.WhatsAppUrl) || !string.IsNullOrEmpty(settings.TelegramUrl) || !string.IsNullOrEmpty(settings.MaxUrl))
+    {
+        <!-- Соцсети + телефон для мобильных -->
+        <div class="mobile-social-bar">
+            @if (!string.IsNullOrEmpty(settings.WhatsAppUrl))
+            {
+                <a href="@settings.WhatsAppUrl" target="_blank" rel="noopener" title="WhatsApp">
+                    <i class="fab fa-whatsapp"></i>
+                </a>
+            }
+            @if (!string.IsNullOrEmpty(settings.TelegramUrl))
+            {
+                <a href="@settings.TelegramUrl" target="_blank" rel="noopener" title="Telegram">
+                    <i class="fab fa-telegram"></i>
+                </a>
+            }
+            @if (!string.IsNullOrEmpty(settings.MaxUrl))
+            {
+                <a href="@settings.MaxUrl" target="_blank" rel="noopener" title="Messenger MAX">
+                    <span class="max-logo-icon"></span>
+                </a>
+            }
+            <a href="tel:@settings.Phone" title="Позвонить">
+                <i class="fas fa-phone-alt"></i>
+            </a>
+        </div>
+    }
+
+    <main>
+        <div class="container-xxl">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer-modern">
+        <div class="container-xxl">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        @if (!string.IsNullOrEmpty(settings.LogoUrl) && settings.LogoUrl != "/images/default-logo.png")
+                        {
+                            <img src="@settings.LogoUrl" alt="@settings.CompanyName" style="height: 30px; margin-right: 10px;" />
+                        }
+                        else
+                        {
+                            <i class="fas fa-car fs-3 me-2" style="color: var(--primary);"></i>
+                        }
+                        <h4 class="mb-0">@settings.CompanyName</h4>
+                    </div>
+                    <p class="mb-0" style="color: var(--text-footer);">Премиальный сервис аренды автомобилей</p>
+                </div>
+                
+                <div class="col-lg-2 col-md-4 col-6 mb-4">
+                    <h6 class="mb-3" style="color: var(--text-primary);">Сервис</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/Car">Автомобили</a></li>
+                        <li class="mb-2"><a href="/Profile/Bookings">Бронирования</a></li>
+                        <li class="mb-2"><a href="/page/about">О компании</a></li>
+                        <li><a href="/page/contact">Контакты</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-4 col-6 mb-4">
+                    <h6 class="mb-3" style="color: var(--text-primary);">Помощь</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/Home/FAQ">FAQ</a></li>
+                        <li class="mb-2"><a href="/page/privacy">Конфиденциальность</a></li>
+                        <li class="mb-2"><a href="/Home/Terms">Условия</a></li>
+                        <li><a href="/page/support">Поддержка</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-4 col-md-4 mb-4">
+                    <h6 class="mb-3" style="color: var(--text-primary);">Контакты</h6>
+                    <ul class="list-unstyled" style="color: var(--text-footer);">
+                        <li class="mb-2">
+                            <i class="fas fa-phone me-2" style="color: var(--primary);"></i>
+                            <span>@settings.Phone</span>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-envelope me-2" style="color: var(--primary);"></i>
+                            <span>@settings.Email</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt me-2" style="color: var(--primary);"></i>
+                            <span>@settings.Address</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr class="my-4" style="border-color: var(--border-color);">
+            
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0" style="color: var(--text-footer);">
+                        © @DateTime.Now.Year О! Прокат. Все права защищены.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex justify-content-md-end gap-3">
+                        <a href="#" class="text-muted"><i class="fab fa-vk"></i></a>
+                        <a href="#" class="text-muted"><i class="fab fa-telegram"></i></a>
+                        <a href="https://wa.me/79859910837?text=%D0%9E%D0%B1%D1%80%D0%B0%D1%89%D0%B5%D0%BD%D0%B8%D0%B5+%D0%B8%D0%B7+%D0%AF%D0%BD%D0%B4%D0%B5%D0%BA%D1%81+%D0%9A%D0%B0%D1%80%D1%82%0A%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5!+%D0%9C%D0%B5%D0%BD%D1%8F+%D0%B7%D0%B0%D0%B8%D0%BD%D1%82%D0%B5%D1%80%D0%B5%D1%81%D0%BE%D0%B2%D0%B0%D0%BB%D0%BE+%D0%B2%D0%B0%D1%88%D0%B5+%D0%BF%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5" class="text-muted"><i class="fab fa-whatsapp"></i></a>
+                        <a href="#" class="text-muted"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+    
+    <script>
+        class ThemeManager {
+            constructor() {
+                this.themeToggle = document.getElementById('themeToggle');
+                this.themeIcon = document.getElementById('themeIcon');
+                this.init();
+            }
+            init() {
+                const savedTheme = localStorage.getItem('carrental-theme') || 'light';
+                this.setTheme(savedTheme);
+                if (this.themeToggle) {
+                    this.themeToggle.addEventListener('click', () => this.toggleTheme());
+                }
+            }
+            setTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('carrental-theme', theme);
+                if (this.themeIcon) {
+                    this.themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+                document.querySelectorAll('.footer-modern p, .footer-modern span, .footer-modern li').forEach(el => {
+                    el.style.color = theme === 'dark' ? '#cbd5e1' : '#64748b';
+                });
+            }
+            toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                this.setTheme(newTheme);
+                this.themeToggle.style.transform = 'scale(0.9)';
+                setTimeout(() => this.themeToggle.style.transform = '', 150);
+            }
+        }
+
+        function initMobileMenu() {
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const panel = document.getElementById('mobileMenuPanel');
+            const toggleBtn = document.getElementById('mobileMenuToggle');
+            const closeBtn = document.getElementById('closeMobileMenu');
+            const desktopNav = document.querySelector('.desktop-nav');
+            const mobileBody = document.querySelector('.mobile-menu-body');
+            
+            if (!toggleBtn || !overlay || !panel || !desktopNav || !mobileBody) return;
+
+            const navClone = desktopNav.cloneNode(true);
+            navClone.classList.remove('d-none', 'd-lg-flex', 'w-100');
+            navClone.classList.add('mobile-nav-content');
+            
+            const rightBlock = navClone.querySelector('.d-flex.align-items-center.gap-3');
+            if (rightBlock) rightBlock.remove();
+
+            const helpSection = document.createElement('div');
+            helpSection.className = 'mobile-static-section px-3 pt-3';
+            helpSection.innerHTML = `
+                <h6 class="text-uppercase text-muted small mb-2">Помощь</h6>
+                <ul class="list-unstyled mb-3">
+                    <li><a class="dropdown-item py-1" href="/Home/FAQ">FAQ</a></li>
+                    <li><a class="dropdown-item py-1" href="/Home/Terms">Условия</a></li>
+                    <li><a class="dropdown-item py-1" href="/page/privacy">Конфиденциальность</a></li>
+                    <li><a class="dropdown-item py-1" href="/page/support">Поддержка</a></li>
+                </ul>
+            `;
+
+            const dynamicSection = document.createElement('div');
+            dynamicSection.className = 'mobile-dynamic-section px-3';
+            dynamicSection.innerHTML = `
+                <h6 class="text-uppercase text-muted small mb-2">Информация</h6>
+                <ul class="list-unstyled mb-3" id="infoPagesMenuMobile"></ul>
+            `;
+
+            const infoMenu = navClone.querySelector('#infoPagesMenu');
+            if (infoMenu) {
+                const parentLi = infoMenu.closest('li');
+                if (parentLi) {
+                    parentLi.innerHTML = '';
+                    parentLi.appendChild(helpSection);
+                    parentLi.appendChild(dynamicSection);
+                }
+            }
+
+            const authBlock = document.createElement('div');
+            authBlock.className = 'mobile-auth-block p-3 border-top mt-3';
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <text>
+                authBlock.innerHTML = `<a href="/Account/Logout" class="btn btn-outline-danger w-100" onclick="return confirm('Вы уверены, что хотите выйти?')"><i class="fas fa-sign-out-alt me-2"></i>Выйти</a>`;
+                </text>
+            }
+            else
+            {
+                <text>
+                authBlock.innerHTML = `<div class="d-grid gap-2"><a href="/Account/Login" class="btn btn-primary"><i class="fas fa-sign-in-alt me-2"></i>Войти</a><a href="/Account/Register" class="btn btn-outline-primary"><i class="fas fa-user-plus me-2"></i>Регистрация</a></div>`;
+                </text>
+            }
+            navClone.appendChild(authBlock);
+            mobileBody.innerHTML = '';
+            mobileBody.appendChild(navClone);
+
+            function openMenu() {
+                overlay.classList.add('show');
+                panel.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+            function closeMenu() {
+                overlay.classList.remove('show');
+                panel.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+            toggleBtn.addEventListener('click', openMenu);
+            closeBtn.addEventListener('click', closeMenu);
+            overlay.addEventListener('click', closeMenu);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.themeManager = new ThemeManager();
+            initMobileMenu();
+            
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(el => new bootstrap.Tooltip(el));
+            
+            document.querySelectorAll('a[href^="#"]:not([data-bs-toggle])').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    const href = this.getAttribute('href');
+                    if (href === '#') return;
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+            
+            console.log('🚗 О! Прокат инициализирован');
+        });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+    
+    @{
+        var isAdmin = User?.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+        var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    @if (!isAdmin)
+    {
+        <div class="position-fixed bottom-0 end-0 m-4" style="z-index: 9999;">
+            <button id="openChatButton" 
+                    class="btn btn-primary rounded-circle shadow-lg" 
+                    style="width: 60px; height: 60px;" 
+                    title="Онлайн-чат с поддержкой"
+                    data-is-authenticated="@isAuthenticated.ToString().ToLower()"
+                    data-user-id="@(userId ?? "")">
+                <i class="fas fa-comment-dots fa-lg"></i>
+            </button>
+        </div>
+
+        <div class="modal fade" id="chatModal" data-bs-backdrop="true" data-bs-keyboard="true" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0">
+                    <div class="modal-header border-bottom border-gray-800 px-4 py-3">
+                        <div class="flex-grow-1">
+                            <h5 class="modal-title fw-semibold mb-0" style="color: var(--text-primary);">Онлайн-чат с поддержкой</h5>
+                            <p class="text-gray-400 mb-0 small mt-1">Мы ответим в ближайшее время</p>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white opacity-70" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div id="chatMessages" style="height: 400px; overflow-y: auto; padding: 1rem;">
+                            <div class="text-center text-muted py-5">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                                <p>Загрузка чата...</p>
+                            </div>
+                        </div>
+                        <div class="p-3 border-top">
+                            <form id="chatMessageForm" class="w-100" enctype="multipart/form-data">
+                                <input type="hidden" id="chatId" value="" />
+                                <div class="input-group">
+                                    <input type="text" id="chatMessageInput" class="form-control" placeholder="Введите сообщение..." autocomplete="off" required>
+                                    <button type="button" id="attachFileButton" class="btn btn-outline-secondary" title="Прикрепить файл">
+                                        <i class="fas fa-paperclip"></i>
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                                <input type="file" id="fileInput" style="display: none;" accept="image/*" />
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    
+    @Html.AntiForgeryToken()
+    @if (!isAdmin)
+    {
+        <script src="~/js/chat-modal.js" asp-append-version="true"></script>
+    }
+
+    <script>
+        (async function loadInfoPages() {
+            try {
+                const response = await fetch('/api/pages/menu');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const pages = await response.json();
+                
+                function fillMenu(menuId) {
+                    const menu = document.getElementById(menuId);
+                    if (!menu) return;
+                    menu.innerHTML = '';
+                    if (!pages.length) {
+                        menu.innerHTML = '<li><span class="dropdown-item text-muted">Нет страниц</span></li>';
+                        return;
+                    }
+                    pages.forEach(page => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a class="dropdown-item" href="/page/${page.slug}">${page.title}</a>`;
+                        menu.appendChild(li);
+                    });
+                }
+                
+                fillMenu('infoPagesMenu');
+                fillMenu('infoPagesMenuMobile');
+            } catch (err) {
+                console.error('Ошибка загрузки страниц:', err);
+                document.querySelectorAll('#infoPagesMenu, #infoPagesMenuMobile').forEach(menu => {
+                    if (menu) menu.innerHTML = '<li><span class="dropdown-item text-danger">Ошибка загрузки</span></li>';
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

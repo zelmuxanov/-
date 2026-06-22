@@ -1,0 +1,108 @@
+@model CarRental.BLL.DTOs.Document.DocumentDto
+@{
+    ViewData["Title"] = "Просмотр документа";
+    Layout = "_AdminLayout";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h5>Документ @Model.DocumentType от @Model.UserFullName</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Пользователь</dt>
+            <dd class="col-sm-9">@Model.UserFullName</dd>
+
+            <dt class="col-sm-3">Тип документа</dt>
+            <dd class="col-sm-9">@Model.DocumentType</dd>
+
+            <dt class="col-sm-3">Номер</dt>
+            <dd class="col-sm-9">@Model.DocumentNumber</dd>
+
+            <dt class="col-sm-3">Дата выдачи</dt>
+            <dd class="col-sm-9">@(Model.IssueDate?.ToShortDateString() ?? "-")</dd>
+
+            @if (Model.ExpiryDate.HasValue)
+            {
+                <dt class="col-sm-3">Срок действия</dt>
+                <dd class="col-sm-9">@Model.ExpiryDate?.ToShortDateString()</dd>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.IssuedBy))
+            {
+                <dt class="col-sm-3">Кем выдан</dt>
+                <dd class="col-sm-9">@Model.IssuedBy</dd>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.BirthDate))
+            {
+                <dt class="col-sm-3">Дата рождения</dt>
+                <dd class="col-sm-9">@Model.BirthDate</dd>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.PlaceOfBirth))
+            {
+                <dt class="col-sm-3">Место рождения</dt>
+                <dd class="col-sm-9">@Model.PlaceOfBirth</dd>
+            }
+
+            <dt class="col-sm-3">Статус</dt>
+            <dd class="col-sm-9">
+                @switch (Model.Status)
+                {
+                    case "Pending": <span class="badge bg-warning">На проверке</span> break;
+                    case "Verified": <span class="badge bg-success">Подтверждён</span> break;
+                    case "Rejected": <span class="badge bg-danger">Отклонён</span> break;
+                }
+            </dd>
+
+            @if (Model.VerifiedAt.HasValue)
+            {
+                <dt class="col-sm-3">Дата проверки</dt>
+                <dd class="col-sm-9">@Model.VerifiedAt?.ToShortDateString()</dd>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <dt class="col-sm-3">Комментарий</dt>
+                <dd class="col-sm-9">@Model.Description</dd>
+            }
+        </dl>
+
+        <div class="mb-3">
+            <a href="@Model.FileUrl" target="_blank" class="btn btn-outline-secondary">Открыть файл в новой вкладке</a>
+        </div>
+
+        @if (Model.Status == "Pending")
+        {
+            <div class="row">
+                <div class="col-md-6">
+                    <form asp-action="Verify" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <input name="comment" class="form-control" placeholder="Комментарий (необязательно)" />
+                            <button type="submit" class="btn btn-success">Подтвердить</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <form asp-action="Reject" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <input name="rejectReason" class="form-control" placeholder="Причина отклонения" required />
+                            <button type="submit" class="btn btn-danger">Отклонить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Документ уже обработан.</p>
+        }
+    </div>
+</div>
+
+<a asp-action="Index" class="btn btn-secondary">Назад к списку</a>

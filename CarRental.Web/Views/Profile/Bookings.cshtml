@@ -1,0 +1,218 @@
+@using CarRental.Domain.Enums
+@model IEnumerable<CarRental.BLL.DTOs.Booking.BookingDto>
+@{
+    ViewData["Title"] = "Мои бронирования";
+    Layout = "_Layout";
+}
+
+<div class="container-xxl py-4">
+    <div class="row">
+        <!-- Боковая навигация -->
+        <div class="col-lg-3">
+            <div class="profile-sidebar">
+                <div class="profile-sidebar-header p-3 border-bottom">
+                    <h6 class="mb-0" style="color: var(--text-primary);">Навигация</h6>
+                </div>
+                <div class="profile-sidebar-body">
+                    <a href="@Url.Action("Index", "Profile")" 
+                       class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                        <i class="fas fa-home profile-nav-icon"></i><span>Обзор</span>
+                    </a>
+                    <a href="@Url.Action("Edit", "Profile")" 
+                       class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Edit" ? "active" : "")">
+                        <i class="fas fa-user-edit profile-nav-icon"></i><span>Редактировать профиль</span>
+                    </a>
+                    <a href="@Url.Action("Index", "Documents")" 
+                        class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Documents" ? "active" : "")">
+                        <i class="fas fa-file-contract profile-nav-icon"></i><span>Документы</span>
+                    </a>
+                    <a href="@Url.Action("Bookings", "Profile")" 
+                       class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "Bookings" ? "active" : "")">
+                        <i class="fas fa-calendar profile-nav-icon"></i><span>Мои бронирования</span>
+                    </a>
+                    <a href="@Url.Action("ChangePassword", "Profile")" 
+                       class="profile-nav-item-modern @(ViewContext.RouteData.Values["Action"]?.ToString() == "ChangePassword" ? "active" : "")">
+                        <i class="fas fa-lock profile-nav-icon"></i><span>Смена пароля</span>
+                    </a>
+                    <a href="/Car" class="profile-nav-item-modern">
+                        <i class="fas fa-search profile-nav-icon"></i><span>Найти автомобиль</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="col-lg-9">
+            <h1 class="mb-4">Мои бронирования</h1>
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+            }
+            @if (Model.Any())
+            {
+                <div class="row g-4">
+                    @foreach (var booking in Model.OrderByDescending(b => b.CreatedAt))
+                    {
+                        <div class="col-12">
+                            <div class="card-modern">
+                                <div class="card-body-modern">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5>@booking.Car?.Brand @booking.Car?.Model</h5>
+                                            <p class="mb-1">
+                                                <strong>Период:</strong> @booking.StartDate.ToString("dd.MM.yyyy") – @booking.EndDate.ToString("dd.MM.yyyy")
+                                                <span class="badge bg-@(GetStatusBadgeColor(booking.Status)) ms-2">@GetStatusText(booking.Status)</span>
+                                            </p>
+                                            <p class="mb-0"><strong>Стоимость:</strong> @booking.TotalPrice.ToString("N0") ₽</p>
+                                        </div>
+                                        <div>
+                                            @if (booking.Status == BookingStatus.Pending)
+                                            {
+                                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal-@booking.Id">Отменить</button>
+                                            }
+                                            else if (booking.Status == BookingStatus.Confirmed)
+                                            {
+                                                <a href="@Url.Action("DownloadContract", "File", new { bookingId = booking.Id })" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-file-word"></i> Скачать договор
+                                                </a>
+                                            }
+                                            <a href="@Url.Action("Details", "Booking", new { id = booking.Id })" 
+                                                class="btn btn-sm btn-outline-primary">
+                                                Подробнее
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                @if (booking.Status == CarRental.Domain.Enums.BookingStatus.Pending)
+                                {
+                                    <div class="card-footer bg-warning bg-opacity-10">
+                                        <small>
+                                            ⏳ Бронирование ожидает подтверждения менеджера. 
+                                            Мы свяжемся с вами в ближайшее время по телефону @booking.User?.PhoneNumber
+                                        </small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        
+                        <!-- Модальное окно отмены (ВЫНЕСЕНО ЗА ПРЕДЕЛЫ КАРТОЧКИ) -->
+                        <div class="modal fade" id="cancelModal-@booking.Id" tabindex="-1" aria-labelledby="cancelModalLabel-@booking.Id" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="cancelModalLabel-@booking.Id">Отмена бронирования</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Вы уверены, что хотите отменить бронирование автомобиля 
+                                        <strong>@booking.Car?.Brand @booking.Car?.Model</strong>?</p>
+                                        <p class="text-danger">Отмена будет отправлена менеджеру для подтверждения.</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Нет</button>
+                                        <button type="button" class="btn btn-danger" onclick="cancelBooking('@booking.Id')">
+                                            Да, отменить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p>У вас пока нет бронирований.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadgeColor(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "success",
+        BookingStatus.Pending => "warning",
+        BookingStatus.Completed => "info",
+        BookingStatus.Cancelled => "danger",
+        _ => "secondary"
+    };
+    string GetStatusText(BookingStatus status) => status switch
+    {
+        BookingStatus.Confirmed => "Подтверждено",
+        BookingStatus.Pending => "На рассмотрении",
+        BookingStatus.Completed => "Завершено",
+        BookingStatus.Cancelled => "Отменено",
+        _ => status.ToString()
+    };
+}
+
+@section Scripts {
+    <script>
+        function cancelBooking(bookingId) {
+            console.log('Cancelling booking:', bookingId);
+            
+            // Закрываем модальное окно
+            const modalElement = document.getElementById('cancelModal-' + bookingId);
+            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+            modal.hide();
+            
+            fetch(`/Booking/Cancel/${bookingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Используем Toast или Bootstrap уведомление вместо alert
+                    showNotification('✅ Бронирование отправлено на отмену. Менеджер свяжется с вами.', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showNotification('❌ Ошибка при отмене бронирования: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('❌ Произошла ошибка при отмене бронирования', 'error');
+            });
+        }
+        
+        function showNotification(message, type) {
+            // Создаем уведомление Bootstrap
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 1060;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Обработчик для предотвращения всплытия событий
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,97 @@
+@model CarRental.Web.ViewModels.Admin.PageCreateEditViewModel
+@{
+    ViewData["Title"] = Model.Id.HasValue ? "Редактирование страницы" : "Создание страницы";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="h3 mb-4">@ViewData["Title"]</h1>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+        @if (Model.Id.HasValue)
+        {
+            <input type="hidden" asp-for="Id" />
+        }
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">Основная информация</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label"></label>
+                            <input asp-for="Title" class="form-control" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Slug" class="form-label"></label>
+                            <input asp-for="Slug" class="form-control" required />
+                            <span asp-validation-for="Slug" class="text-danger"></span>
+                            <small class="form-text text-muted">Только латинские буквы, цифры и дефис (например: about-company)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label"></label>
+                            <textarea asp-for="Content" class="form-control" rows="15" id="Content"></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">Настройки</div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="MetaDescription" class="form-label"></label>
+                            <textarea asp-for="MetaDescription" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="DisplayOrder" class="form-label"></label>
+                            <input asp-for="DisplayOrder" class="form-control" type="number" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="PublishedAt" class="form-label"></label>
+                            <input asp-for="PublishedAt" class="form-control" type="datetime-local" value="@(Model.PublishedAt?.ToString("yyyy-MM-ddTHH:mm"))" />
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/lib/tinymce/tinymce.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof tinymce !== 'undefined') {
+                tinymce.init({
+                    selector: '#Content',
+                    height: 500,
+                    menubar: false,
+                    plugins: 'link image code lists table media',
+                    toolbar: 'undo redo | formatselect | bold italic | alignleft aligncenter alignright | bullist numlist | link image media | code',
+                    images_upload_url: '/Admin/Page/upload-image',
+                    automatic_uploads: true,
+                    file_picker_types: 'image',
+                    // Исправлены пути к темам и стилям
+                    skin_url: '/lib/tinymce/skins/ui/oxide',
+                    content_css: '/lib/tinymce/skins/content/default/content.min.css',
+                    content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                });
+            } else {
+                console.error('TinyMCE не загружен');
+            }
+        });
+    </script>
+}

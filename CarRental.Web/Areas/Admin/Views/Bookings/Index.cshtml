@@ -1,0 +1,223 @@
+@model IEnumerable<CarRental.BLL.DTOs.Booking.BookingDto>
+@using CarRental.Domain.Enums
+@using CarRental.Domain.Entities    
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<User> UserManager
+@{
+    ViewData["Title"] = "Управление бронированиями";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var systemUser = await UserManager.FindByEmailAsync("system@carrental.local");
+    var systemUserId = systemUser?.Id.ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Фильтры -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Фильтры</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <a href="@Url.Action("Index")" class="btn @(ViewBag.CurrentStatus == null ? "btn-primary" : "btn-outline-primary") w-100">Все</a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Index", new { status = BookingStatus.Pending })" class="btn @(ViewBag.CurrentStatus == BookingStatus.Pending ? "btn-warning" : "btn-outline-warning") w-100">Новые</a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Index", new { status = BookingStatus.Confirmed })" class="btn @(ViewBag.CurrentStatus == BookingStatus.Confirmed ? "btn-success" : "btn-outline-success") w-100">Подтверждённые</a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Index", new { status = BookingStatus.Cancelled })" class="btn @(ViewBag.CurrentStatus == BookingStatus.Cancelled ? "btn-danger" : "btn-outline-danger") w-100">Отменённые</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Автомобиль</th>
+                    <th>Клиент</th>
+                    <th>Период</th>
+                    <th>Стоимость</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model.OrderByDescending(b => b.CreatedAt))
+                {
+                    <tr>
+                        <td><small class="text-muted">@booking.Id.ToString().Substring(0, 8)...</small></td>
+                        <td>
+                            <a href="@Url.Action("Details", "Cars", new { area = "Admin", id = booking.CarId })" 
+                               class="text-decoration-none fw-bold" title="Открыть автомобиль">
+                                @booking.Car?.Brand @booking.Car?.Model <i class="fas fa-external-link-alt fa-xs ms-1 text-muted"></i>
+                            </a>
+                        </td>
+                        <td>
+                            @if (booking.UserId.ToString() == systemUserId)
+                            {
+                                // Парсинг Notes для быстрых заявок
+                                var note = booking.Notes ?? "";
+                                var clientName = "";
+                                var clientPhone = "";
+                                var clientEmail = "";
+                                
+                                var nameMatch = System.Text.RegularExpressions.Regex.Match(note, @"Клиент:\s*([^,]+)");
+                                if (nameMatch.Success) clientName = nameMatch.Groups[1].Value.Trim();
+                                
+                                var phoneMatch = System.Text.RegularExpressions.Regex.Match(note, @"Телефон:\s*([^,]+)");
+                                if (phoneMatch.Success) clientPhone = phoneMatch.Groups[1].Value.Trim();
+                                
+                                var emailMatch = System.Text.RegularExpressions.Regex.Match(note, @"Email:\s*(\S+)");
+                                if (emailMatch.Success) clientEmail = emailMatch.Groups[1].Value.Trim();
+                                
+                                <div>
+                                    <strong>@clientName</strong><br />
+                                    <small class="text-muted">@clientPhone</small><br />
+                                    <small class="text-muted">@clientEmail</small>
+                                    <span class="badge bg-secondary ms-2">Быстрая заявка</span>
+                                </div>
+                            }
+                            else if (booking.User != null)
+                            {
+                                <a href="@Url.Action("Details", "Users", new { area = "Admin", id = booking.UserId })" 
+                                class="text-decoration-none" title="Открыть пользователя">
+                                    @booking.User.FirstName @booking.User.LastName
+                                </a>
+                                <br>
+                                <small class="text-muted">@booking.User.Email</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Нет данных</span>
+                            }
+                        </td>
+                        <td>
+                            @booking.StartDate.ToString("dd.MM.yyyy")<br>
+                            @booking.EndDate.ToString("dd.MM.yyyy")
+                        </td>
+                        <td>@booking.TotalPrice.ToString("N0") ₽</td>
+                        <td>
+                            @switch (booking.Status)
+                            {
+                                case BookingStatus.Pending:
+                                    <span class="badge bg-warning">На рассмотрении</span>
+                                    break;
+                                case BookingStatus.Confirmed:
+                                    <span class="badge bg-success">Подтверждено</span>
+                                    break;
+                                case BookingStatus.Active:
+                                    <span class="badge bg-primary">Активно</span>
+                                    break;
+                                case BookingStatus.Completed:
+                                    <span class="badge bg-info">Завершено</span>
+                                    break;
+                                case BookingStatus.Cancelled:
+                                    <span class="badge bg-danger">Отменено</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <div class="actions-group">
+                                @if (booking.Status == BookingStatus.Pending)
+                                {
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#confirmModal-@booking.Id" title="Подтвердить">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    
+
+                                    <form method="post" action="@Url.Action("Cancel", "Bookings", new { area = "Admin", id = booking.Id })" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Отменить бронирование?')" title="Отменить">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else if (booking.Status == BookingStatus.Confirmed)
+                                {
+                                    <a href="@Url.Action("DownloadContract", "File", new { bookingId = booking.Id })" class="btn btn-outline-primary" title="Скачать договор">
+                                        <i class="fas fa-file-word"></i>
+                                    </a>
+                                    <form method="post" action="@Url.Action("Cancel", "Bookings", new { area = "Admin", id = booking.Id })" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Отменить подтверждённое бронирование?')" title="Отменить">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </form>
+                                }
+                                else if (booking.Status == BookingStatus.Completed)
+                                {
+                                    <a href="@Url.Action("DownloadContract", "File", new { bookingId = booking.Id })" class="btn btn-outline-secondary" title="Скачать договор">
+                                        <i class="fas fa-file-word"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-calendar-check fa-3x text-muted mb-3"></i>
+        <p class="text-muted">Бронирования не найдены</p>
+    </div>
+}
+
+<!-- Контейнер модальных окон (вне таблицы) -->
+@foreach (var booking in Model.Where(b => b.Status == BookingStatus.Pending))
+{
+    <div class="modal fade" id="confirmModal-@booking.Id" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="post" action="@Url.Action("Confirm", "Bookings", new { area = "Admin" })">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@booking.Id" />
+                    <div class="modal-header">
+                        <h5 class="modal-title">Подтверждение бронирования</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Номер договора</label>
+                            <input type="text" name="contractNumber" class="form-control" placeholder="Введите номер" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="submit" class="btn btn-success">Подтвердить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

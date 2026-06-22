@@ -1,0 +1,819 @@
+@model IEnumerable<CarRental.BLL.DTOs.Car.CarDto>
+@using CarRental.BLL.DTOs.Banner
+@using CarRental.Domain.Enums
+
+@{
+    ViewData["Title"] = "О! Прокат - Аренда автомобилей в Москве и Московской области!";
+    Layout = "_Layout";
+    
+    var banners = ViewBag.Banners as IEnumerable<CarRental.BLL.DTOs.Banner.BannerDto> ?? new List<CarRental.BLL.DTOs.Banner.BannerDto>();
+    var hasBanners = banners.Any(b => b.IsActive);
+    var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+}
+
+<div class="container-xxl mt-4">
+    @if (hasBanners)
+    {
+        <div id="mainCarousel" class="carousel slide carousel-banner mb-5" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                @for (int i = 0; i < banners.Count(); i++)
+                {
+                    <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")"></button>
+                }
+            </div>
+            
+            <div class="carousel-inner">
+                @{ int index = 0; }
+                @foreach (var banner in banners.Where(b => b.IsActive))
+                {
+                    var interval = banner.MediaType == BannerMediaType.Video ? 0 : 5000;
+                    <div class="carousel-item @(index == 0 ? "active" : "")" data-bs-interval="@interval">
+                        <div class="carousel-image-wrapper">
+                            @if (banner.MediaType == BannerMediaType.Video && !string.IsNullOrEmpty(banner.VideoUrl))
+                            {
+                                if (banner.VideoUrl.Contains("youtube.com/watch") || banner.VideoUrl.Contains("youtu.be/"))
+                                {
+                                    var embedUrl = banner.VideoUrl
+                                        .Replace("watch?v=", "embed/")
+                                        .Replace("youtu.be/", "youtube.com/embed/")
+                                        .Split('&')[0];
+                                    <iframe class="d-block w-100 h-100" src="@embedUrl" 
+                                            frameborder="0" allowfullscreen 
+                                            style="pointer-events: auto; width: 100%; height: 100%;"></iframe>
+                                }
+                                else if (banner.VideoUrl.Contains("vimeo.com/"))
+                                {
+                                    var vimeoId = banner.VideoUrl.Split('/').Last();
+                                    <iframe class="d-block w-100 h-100" src="https://player.vimeo.com/video/@vimeoId" 
+                                            frameborder="0" allowfullscreen
+                                            style="pointer-events: auto; width: 100%; height: 100%;"></iframe>
+                                }
+                                else
+                                {
+                                    <video class="d-block w-100 h-100" 
+                                        autoplay="@(banner.VideoAutoplay ? "autoplay" : null)"
+                                        muted="@(banner.VideoMuted ? "muted" : null)"
+                                        loop="@(banner.VideoLoop ? "loop" : null)"
+                                        controls="@(banner.VideoControls ? "controls" : null)"
+                                        playsinline
+                                        style="object-fit: cover;">
+                                        <source src="@banner.VideoUrl" type="video/mp4">
+                                        Ваш браузер не поддерживает видео.
+                                    </video>
+                                }
+                            }
+                            else
+                            {
+                                <img src="@banner.ImageUrl" class="d-block w-100" 
+                                style="height: 100%; object-fit: @(banner.ObjectFit ?? "cover"); object-position: @(banner.ObjectPosition ?? "center");" 
+                                alt="@banner.Title" loading="lazy" />
+                            }
+                        </div>
+                        @{
+                            bool hasTitle = !string.IsNullOrWhiteSpace(banner.Title);
+                            bool hasDesc = !string.IsNullOrWhiteSpace(banner.Description);
+                            bool hasButton = !string.IsNullOrWhiteSpace(banner.ButtonText) && banner.ButtonText != "Подробнее";
+                            bool showCaption = hasTitle || hasDesc || hasButton;
+                        }
+                        @if (showCaption)
+                        {
+                            <div class="carousel-caption">
+                                <div class="caption-content">
+                                    @if (hasTitle)
+                                    {
+                                        <h2 class="display-5 fw-bold mb-3">@banner.Title</h2>
+                                    }
+                                    @if (hasDesc)
+                                    {
+                                        <p class="lead mb-4">@banner.Description</p>
+                                    }
+                                    @if (hasButton && !string.IsNullOrEmpty(banner.Link))
+                                    {
+                                        <a href="@banner.Link" class="btn btn-primary btn-lg px-4 py-2">
+                                            @banner.ButtonText <i class="fas fa-arrow-right ms-2"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    index++;
+                }
+            </div>
+            
+            <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Предыдущий</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Следующий</span>
+            </button>
+        </div>
+    }
+
+    @if (!isAuthenticated)
+    {
+        <div class="modal fade" id="guestBookingModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0" style="background: #111827; color: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+                    <div class="modal-header border-bottom border-gray-800 px-4 py-3" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%); backdrop-filter: blur(10px);">
+                        <div class="flex-grow-1">
+                            <h5 class="modal-title fw-semibold text-white mb-0">Быстрое бронирование</h5>
+                            <p class="text-gray-400 mb-0 small mt-1">Заполните данные для бронирования</p>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white opacity-70" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="guestBookingForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" id="guestCarId" name="CarId" />
+                            
+                            <!-- Контактная информация -->
+                            <h6 class="text-white fw-medium mb-3">Ваши данные</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label text-white fw-medium mb-2">ФИО</label>
+                                    <input type="text" id="guestFullName" name="FullName" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Иванов Иван Иванович" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white fw-medium mb-2">Телефон</label>
+                                    <input type="tel" id="guestPhone" name="Phone" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="+7 (___) ___-__-__" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white fw-medium mb-2">Email</label>
+                                    <input type="email" id="guestEmail" name="Email" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="email@example.com" required>
+                                </div>
+                            </div>
+                            
+                            <!-- Даты аренды -->
+                            <h6 class="text-white fw-medium mb-3">Даты аренды</h6>
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label text-white fw-medium mb-2">Дата начала</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="text" id="guestStartDate" name="StartDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white fw-medium mb-2">Дата окончания</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-check"></i></span>
+                                        <input type="text" id="guestEndDate" name="EndDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Чекбокс согласия -->
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="guestAgreeTerms" name="AgreeTerms" required>
+                                <label class="form-check-label text-white" for="guestAgreeTerms">
+                                    Я согласен с <a href="/Home/Terms" target="_blank" style="color: #7dd3fc;">условиями оферты</a>
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex gap-3 mt-4">
+                                <button type="submit" class="btn btn-primary flex-grow-1 py-3 fw-semibold" id="guestSubmitBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: none;">
+                                    <i class="fas fa-check-circle me-2"></i>Отправить заявку
+                                </button>
+                                <button type="button" class="btn btn-outline-light border-gray-700 text-white px-4 py-3" data-bs-dismiss="modal">Отмена</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!isAuthenticated)
+    {
+        <div class="features-section">
+            <div class="text-center mb-5">
+                <h2 class="mb-3">Почему выбирают нас</h2>
+                <p class="text-muted mb-0">Лучший сервис аренды автомобилей в Москве</p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <h3 class="feature-title">Широкий выбор</h3>
+                        <p class="feature-description">Автомобили разных классов и марок для любых задач</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3 class="feature-title">Выгодные цены</h3>
+                        <p class="feature-description">Лучшие цены на рынке аренды без скрытых платежей</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="feature-title">Быстрое оформление</h3>
+                        <p class="feature-description">Процесс аренды за 5 минут с минимальным пакетом документов</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-4">Популярные автомобили:</h2>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row g-4 d-none d-md-flex">
+            @foreach (var car in Model.Take(6))
+            {
+                <div class="col-6 col-md-4">
+                    @await Html.PartialAsync("_CarCard", car)
+                </div>
+            }
+        </div>
+
+        <div class="popular-cars-carousel d-md-none" id="popularCarsCarousel">
+            @foreach (var car in Model.Take(6))
+            {
+                @await Html.PartialAsync("_CarCard", car)
+            }
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-car fa-3x mb-3 text-primary"></i>
+                <h4>Автомобилей пока нет</h4>
+                <p>Но мы активно работаем над пополнением автопарка!</p>
+            </div>
+        </div>
+    }
+
+    @if (Model != null && Model.Count() > 3)
+    {
+        <div class="row mt-5">
+            <div class="col-12 text-center">
+                <a href="/Car" class="btn btn-primary btn-lg px-5 text-decoration-none">Показать все автомобили (@(ViewBag.TotalCars ?? 0))</a>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="reviews-section mt-5">
+    <div class="text-center mb-4">
+        <h2 class="mb-3">Отзывы наших клиентов</h2>
+        <p class="text-muted">Что говорят о нас на Яндекс.Картах</p>
+    </div>
+    <div class="yandex-reviews-card">
+        <div class="yandex-reviews-frame">
+            <iframe 
+                src="https://yandex.ru/maps-reviews-widget/130591118930?comments"
+                style="width:100%;height:900px;border:none;border-radius:16px;background:var(--bg-card);"
+                title="Отзывы о О! Прокат на Яндекс.Картах"
+                loading="lazy">
+            </iframe>
+        </div>
+        <div class="yandex-reviews-footer">
+            <a href="https://yandex.ru/maps/org/o_prokat/130591118930/" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               class="yandex-powered-link">
+                О! Прокат на карте Одинцово — Яндекс Карты
+            </a>
+            <a href="/Home/Reviews" class="btn btn-outline-primary yandex-more-btn">
+                <i class="fas fa-external-link-alt me-2"></i>Смотреть все отзывы
+            </a>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetCarClassName(string carClass)
+    {
+        return carClass switch
+        {
+            "Standard" => "Стандарт",
+            "SUV" => "Кроссовер",
+            "Business" => "Бизнес",
+            "Minivan" => "Минивэн",
+            _ => carClass
+        };
+    }
+    
+    string GetFuelTypeName(string fuelType)
+    {
+        return fuelType switch
+        {
+            "Petrol" => "Бензин",
+            "Diesel" => "Дизель",
+            "Hybrid" => "Гибрид",
+            _ => fuelType
+        };
+    }
+    
+    string GetTransmissionName(string transmission)
+    {
+        return transmission switch
+        {
+            "Manual" => "Механика",
+            "Automatic" => "Автомат",
+            _ => transmission
+        };
+    }
+    
+    string GetSortName(string sort)
+    {
+        return sort switch
+        {
+            "price_asc" => "Цена по возрастанию",
+            "price_desc" => "Цена по убыванию",
+            _ => sort
+        };
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+    <style>
+        .carousel-banner .carousel-caption {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            right: auto;
+            padding: 0;
+            background: none;
+            text-align: left;
+            max-width: 600px;
+        }
+        .carousel-banner .caption-content {
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .carousel-banner .carousel-caption h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .carousel-banner .carousel-caption p {
+            font-size: 1.25rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+        @@media (max-width: 768px) {
+            .carousel-banner .carousel-caption {
+                bottom: 1.5rem;
+                left: 1.5rem;
+                right: 1.5rem;
+                max-width: none;
+            }
+            .carousel-banner .caption-content { padding: 1.5rem; }
+            .carousel-banner .carousel-caption h2 { font-size: 2rem; }
+            .carousel-banner .carousel-caption p { font-size: 1rem; }
+        }
+        @@media (max-width: 576px) {
+            .carousel-banner .carousel-caption { bottom: 1rem; left: 1rem; right: 1rem; }
+            .carousel-banner .caption-content { padding: 1rem; }
+            .carousel-banner .carousel-caption h2 { font-size: 1.5rem; }
+            .carousel-banner .carousel-caption p { font-size: 0.9rem; }
+        }
+        .quick-booking-section .card {
+            border-radius: 1rem;
+        }
+        .quick-booking-section .dropdown-menu {
+            border-radius: 0.75rem;
+        }
+        .car-dropdown-item {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .car-dropdown-item:hover {
+            background: var(--bs-gray-100);
+        }
+        [data-theme="dark"] .car-dropdown-item:hover {
+            background: var(--bs-gray-800);
+        }
+        .quick-booking-section .card,
+        .quick-booking-section .card-body {
+            overflow: visible !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/ru.js"></script>
+    <script>
+        // ========== ГОСТЕВОЕ МОДАЛЬНОЕ ОКНО БРОНИРОВАНИЯ ==========
+        (function() {
+            const modalElement = document.getElementById('guestBookingModal');
+            if (!modalElement) return;
+
+            let fpStart = null, fpEnd = null;
+            const guestCarId = document.getElementById('guestCarId');
+            const submitBtn = document.getElementById('guestSubmitBtn');
+            const form = document.getElementById('guestBookingForm');
+
+            modalElement.addEventListener('show.bs.modal', function() {
+                if (fpStart) fpStart.destroy();
+                if (fpEnd) fpEnd.destroy();
+
+                fpStart = flatpickr('#guestStartDate', {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d',
+                    locale: 'ru',
+                    disable: [],
+                    static: true
+                });
+                fpEnd = flatpickr('#guestEndDate', {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d',
+                    locale: 'ru',
+                    disable: [],
+                    static: true
+                });
+
+                form.reset();
+            });
+
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                if (fpStart) fpStart.destroy();
+                if (fpEnd) fpEnd.destroy();
+            });
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!document.getElementById('guestAgreeTerms').checked) {
+                    alert('Необходимо согласиться с условиями оферты');
+                    return;
+                }
+
+                const payload = {
+                    carId: guestCarId.value,
+                    startDate: document.getElementById('guestStartDate').value,
+                    endDate: document.getElementById('guestEndDate').value,
+                    name: document.getElementById('guestFullName').value,
+                    phone: document.getElementById('guestPhone').value,
+                    email: document.getElementById('guestEmail').value
+                };
+
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+
+                try {
+                    const response = await fetch('/Booking/QuickBook', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        modal.hide();
+                        alert('✅ ' + result.message);
+                    } else {
+                        alert('❌ Ошибка: ' + (result.message || (result.errors ? result.errors.join(', ') : 'Неизвестная ошибка')));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка сети. Попробуйте позже.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+        })();
+    </script>
+    <script>
+        // ==================== КАРУСЕЛЬ С ВИДЕО ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            const carouselElement = document.getElementById('mainCarousel');
+            if (!carouselElement) return;
+
+            const carousel = new bootstrap.Carousel(carouselElement, {
+                interval: false,
+                wrap: true,
+                ride: false
+            });
+
+            function restartVideoOnActiveSlide() {
+                const activeItem = carouselElement.querySelector('.carousel-item.active');
+                if (!activeItem) return;
+
+                const video = activeItem.querySelector('video');
+                if (video) {
+                    video.currentTime = 0;
+                    if (video.muted) {
+                        video.play().catch(e => console.warn('Автовоспроизведение заблокировано:', e));
+                    } else {
+                        video.muted = true;
+                        video.play().catch(e => console.warn('Автовоспроизведение заблокировано:', e));
+                    }
+                }
+
+                const youtubeIframe = activeItem.querySelector('iframe[src*="youtube.com/embed"]');
+                if (youtubeIframe && youtubeIframe.contentWindow) {
+                    youtubeIframe.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*');
+                    youtubeIframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+                }
+
+                const vimeoIframe = activeItem.querySelector('iframe[src*="vimeo.com"]');
+                if (vimeoIframe && vimeoIframe.contentWindow) {
+                    vimeoIframe.contentWindow.postMessage('{"method":"setCurrentTime","value":0}', '*');
+                    vimeoIframe.contentWindow.postMessage('{"method":"play"}', '*');
+                }
+            }
+
+            function setupVideoEndListeners() {
+                const videos = carouselElement.querySelectorAll('.carousel-item video');
+                videos.forEach(video => {
+                    video.removeEventListener('ended', onVideoEnded);
+                    video.addEventListener('ended', onVideoEnded);
+                });
+                initYouTubePlayers();
+                initVimeoPlayers();
+            }
+
+            function onVideoEnded(event) {
+                const video = event.target;
+                if (video.hasAttribute('loop') && video.loop) return;
+                carousel.next();
+            }
+
+            carouselElement.addEventListener('slid.bs.carousel', function() {
+                restartVideoOnActiveSlide();
+            });
+
+            restartVideoOnActiveSlide();
+            setupVideoEndListeners();
+
+            function initYouTubePlayers() {
+                const youtubeIframes = carouselElement.querySelectorAll('iframe[src*="youtube.com/embed"]');
+                youtubeIframes.forEach(iframe => {
+                    if (iframe.dataset.ytReady) return;
+                    iframe.dataset.ytReady = 'true';
+                    let src = iframe.src;
+                    if (!src.includes('enablejsapi=1')) {
+                        src += (src.includes('?') ? '&' : '?') + 'enablejsapi=1';
+                        iframe.src = src;
+                    }
+                    window.addEventListener('message', function(event) {
+                        if (event.source !== iframe.contentWindow) return;
+                        if (event.data === 'ended') {
+                            const parentSlide = iframe.closest('.carousel-item');
+                            if (parentSlide && parentSlide.classList.contains('active')) {
+                                const loopParam = iframe.src.match(/[?&]loop=([^&]+)/);
+                                if (loopParam && loopParam[1] === '1') return;
+                                carousel.next();
+                            }
+                        }
+                    });
+                });
+            }
+
+            function initVimeoPlayers() {
+                const vimeoIframes = carouselElement.querySelectorAll('iframe[src*="vimeo.com"]');
+                vimeoIframes.forEach(iframe => {
+                    if (iframe.dataset.vimeoReady) return;
+                    iframe.dataset.vimeoReady = 'true';
+                    let src = iframe.src;
+                    if (!src.includes('api=1')) {
+                        src += (src.includes('?') ? '&' : '?') + 'api=1';
+                        iframe.src = src;
+                    }
+                    window.addEventListener('message', function(event) {
+                        if (event.source !== iframe.contentWindow) return;
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.event === 'ended') {
+                                const parentSlide = iframe.closest('.carousel-item');
+                                if (parentSlide && parentSlide.classList.contains('active')) {
+                                    carousel.next();
+                                }
+                            }
+                        } catch(e) {}
+                    });
+                });
+            }
+
+            if (typeof YT === 'undefined' && document.querySelector('iframe[src*="youtube.com/embed"]')) {
+                var tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                window.onYouTubeIframeAPIReady = function() {
+                    initYouTubePlayers();
+                };
+            } else {
+                initYouTubePlayers();
+            }
+        });
+
+        // Клик по карточке авто
+        document.querySelectorAll('.car-card-modern').forEach(card => {
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('a, button, .btn')) return;
+                const link = this.querySelector('a[href*="/Car/Details"]');
+                if (link) window.location.href = link.href;
+            });
+        });
+    </script>
+
+    <script>
+        // ==================== БЫСТРОЕ БРОНИРОВАНИЕ ====================
+        (function() {
+            const startInput = document.getElementById('qbStartDate');
+            const endInput = document.getElementById('qbEndDate');
+            const carWrapper = document.getElementById('carSelectWrapper');
+            const carDropdownMenu = document.getElementById('carDropdownMenu');
+            const selectedCarIdField = document.getElementById('selectedCarId');
+            const dropdownBtn = document.getElementById('carDropdownButton');
+            const selectedCarNameSpan = document.getElementById('selectedCarName');
+            const previewDiv = document.getElementById('selectedCarPreview');
+            const previewImage = document.getElementById('previewImage');
+            const previewPrice = document.getElementById('previewPrice');
+            const submitBtn = document.getElementById('quickBookSubmitBtn');
+            const form = document.getElementById('quickBookingForm');
+            const csrfToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            let fpStart, fpEnd;
+            let currentAvailableCars = [];
+
+            if (!startInput || !endInput) return;
+
+            fpStart = flatpickr(startInput, {
+                dateFormat: 'Y-m-d',
+                locale: 'ru',
+                minDate: 'today',
+                appendTo: document.body,
+                onChange: function(selectedDates) {
+                    if (selectedDates.length) {
+                        fpEnd.set('minDate', selectedDates[0]);
+                        if (endInput.value) loadAvailableCars();
+                    } else {
+                        carWrapper.style.display = 'none';
+                    }
+                }
+            });
+
+            fpEnd = flatpickr(endInput, {
+                dateFormat: 'Y-m-d',
+                locale: 'ru',
+                minDate: new Date().fp_incr(1),
+                appendTo: document.body,
+                onChange: function() {
+                    if (startInput.value && endInput.value) loadAvailableCars();
+                }
+            });
+
+            async function loadAvailableCars() {
+                const start = startInput.value;
+                const end = endInput.value;
+                if (!start || !end) return;
+
+                carDropdownMenu.innerHTML = '<div class="text-center text-muted">Загрузка...</div>';
+                carWrapper.style.display = 'block';
+
+                try {
+                    const response = await fetch(`/api/public/free-cars?startDate=${start}&endDate=${end}`);
+                    if (!response.ok) throw new Error('Ошибка загрузки');
+                    const cars = await response.json();
+                    currentAvailableCars = cars;
+
+                    if (!cars.length) {
+                        carDropdownMenu.innerHTML = '<div class="text-muted p-2">Нет доступных автомобилей на выбранные даты</div>';
+                        return;
+                    }
+
+                    carDropdownMenu.innerHTML = '';
+                    cars.forEach(car => {
+                        const item = document.createElement('div');
+                        item.className = 'dropdown-item car-dropdown-item d-flex align-items-center';
+                        item.style.cursor = 'pointer';
+                        item.innerHTML = `
+                            <img src="${car.mainImageUrl || '/images/no-image.png'}" style="width:50px;height:35px;object-fit:cover;border-radius:6px;margin-right:10px;">
+                            <div>
+                                <strong>${car.brand} ${car.model}</strong><br>
+                                <small>${car.pricePerDay.toLocaleString()} ₽/сутки</small>
+                            </div>
+                        `;
+                        item.addEventListener('click', () => selectCar(car));
+                        carDropdownMenu.appendChild(item);
+                    });
+                } catch (err) {
+                    carDropdownMenu.innerHTML = '<div class="text-danger p-2">Ошибка загрузки</div>';
+                    console.error(err);
+                }
+            }
+
+            function selectCar(car) {
+                selectedCarIdField.value = car.id;
+                selectedCarNameSpan.innerText = `${car.brand} ${car.model}`;
+                dropdownBtn.classList.remove('btn-outline-secondary');
+                dropdownBtn.classList.add('btn-primary');
+                previewImage.src = car.mainImageUrl || '/images/no-image.png';
+                previewPrice.innerText = `${car.pricePerDay.toLocaleString()} ₽/сутки`;
+                previewDiv.classList.remove('d-none');
+                const bsDropdown = bootstrap.Dropdown.getInstance(dropdownBtn);
+                if (bsDropdown) bsDropdown.hide();
+            }
+
+            // Маска для телефона (вставка)
+            const phoneInput = document.getElementById('qbPhone');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    let x = this.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+                    if (!x) return;
+                    this.value = !x[2] ? '+' + x[1] : '+' + x[1] + ' (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+                });
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('qbName').value.trim();
+                const phone = document.getElementById('qbPhone').value.trim();
+                const email = document.getElementById('qbEmail').value.trim();
+                if (!name || !phone || !email) {
+                    alert('Заполните все контактные данные');
+                    return;
+                }
+                if (!startInput.value || !endInput.value) {
+                    alert('Выберите даты');
+                    return;
+                }
+                if (!selectedCarIdField.value) {
+                    alert('Выберите автомобиль');
+                    return;
+                }
+                if (new Date(startInput.value) >= new Date(endInput.value)) {
+                    alert('Дата начала должна быть раньше даты окончания');
+                    return;
+                }
+
+                const payload = {
+                    name: name,
+                    phone: phone,
+                    email: email,
+                    startDate: startInput.value,
+                    endDate: endInput.value,
+                    carId: selectedCarIdField.value
+                };
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+
+                try {
+                    const response = await fetch('/Booking/QuickBook', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': csrfToken
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('✅ ' + result.message);
+                        form.reset();
+                        selectedCarIdField.value = '';
+                        selectedCarNameSpan.innerText = 'Выберите авто';
+                        previewDiv.classList.add('d-none');
+                        carWrapper.style.display = 'none';
+                        fpStart.clear();
+                        fpEnd.clear();
+                        dropdownBtn.classList.remove('btn-primary');
+                        dropdownBtn.classList.add('btn-outline-secondary');
+                    } else {
+                        alert('❌ Ошибка: ' + (result.message || (result.errors ? result.errors.join(', ') : 'Неизвестная ошибка')));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка сети. Попробуйте позже.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-calendar-check me-2"></i> Отправить заявку';
+                }
+            });
+        })();
+    </script>
+}

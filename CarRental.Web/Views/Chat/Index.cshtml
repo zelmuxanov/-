@@ -1,0 +1,71 @@
+@model CarRental.Web.ViewModels.Chat.ChatViewModel
+@{
+    ViewData["Title"] = "Онлайн-чат";
+    Layout = "_Layout";
+    
+    var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+    var isAdmin = User?.IsInRole("Admin") ?? false;
+}
+
+<div class="container-xxl py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>Онлайн-чат с поддержкой
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div id="chatContainer" style="height: 400px; overflow-y: auto;" class="mb-3">
+                        <!-- Сообщения будут загружены через JS -->
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                            <p>Загрузка сообщений...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input mt-3">
+                        <form id="messageForm" enctype="multipart/form-data">
+                            <div class="input-group">
+                                <input type="text" id="messageInput" class="form-control" 
+                                       placeholder="Введите сообщение..." autocomplete="off">
+                                <button type="button" id="attachFileButton" class="btn btn-outline-secondary" title="Прикрепить файл">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Отправить
+                                </button>
+                            </div>
+                            <input type="file" id="fileInput" style="display: none;" accept="image/*" />
+                            <div id="filePreview" class="mt-2"></div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Служба поддержки отвечает в рабочее время с 9:00 до 21:00
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+    
+    <script>
+        var chatConfig = {
+            chatId: '@(Model?.ChatId != null && Model.ChatId != Guid.Empty ? Model.ChatId.ToString() : "")',
+            userId: '@(Model?.UserId?.ToString() ?? "")',
+            isAuthenticated: @isAuthenticated.ToString().ToLower(),
+            isAdmin: @isAdmin.ToString().ToLower(),
+            tempUserId: '@(Model?.TempUserId?.ToString() ?? "")'
+        };
+        console.log('chatConfig', chatConfig);
+    </script>
+}

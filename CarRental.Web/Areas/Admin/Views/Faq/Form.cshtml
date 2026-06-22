@@ -1,0 +1,112 @@
+@model CarRental.Web.ViewModels.Admin.FaqCreateEditViewModel
+@{
+    ViewData["Title"] = Model.Id.HasValue ? "Редактирование вопроса" : "Создание вопроса";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas @(Model.Id.HasValue ? "fa-edit" : "fa-plus") me-2"></i>@ViewData["Title"]
+        </h1>
+        <div>
+            <a asp-area="Admin" asp-controller="Faq" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Назад к списку
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Основная информация</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+                        @if (Model.Id.HasValue)
+                        {
+                            <input type="hidden" asp-for="Id" />
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="Question" class="form-label">Вопрос *</label>
+                            <input asp-for="Question" class="form-control" required maxlength="500" />
+                            <span asp-validation-for="Question" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Answer" class="form-label">Ответ *</label>
+                            <textarea asp-for="Answer" class="form-control" rows="5" required></textarea>
+                            <span asp-validation-for="Answer" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Category" class="form-label">Категория</label>
+                                <input asp-for="Category" class="form-control" maxlength="100" placeholder="Например: Общие вопросы" />
+                                <span asp-validation-for="Category" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DisplayOrder" class="form-label">Порядок отображения</label>
+                                <input asp-for="DisplayOrder" type="number" class="form-control" min="0" max="1000" />
+                                <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label">Активен</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-area="Admin" asp-controller="Faq" asp-action="Index" class="btn btn-outline-secondary">Отмена</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas @(Model.Id.HasValue ? "fa-save" : "fa-plus") me-1"></i>
+                                @(Model.Id.HasValue ? "Сохранить изменения" : "Создать вопрос")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Информация</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Категории помогают группировать вопросы на странице FAQ.
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-sort-amount-up text-primary me-2"></i>
+                            Меньшее число = выше в списке.
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-eye-slash text-primary me-2"></i>
+                            Неактивные вопросы не показываются на сайте.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

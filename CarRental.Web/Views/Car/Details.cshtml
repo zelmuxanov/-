@@ -1,0 +1,1158 @@
+@using CarRental.BLL.DTOs.Car
+@using System.Web
+@using CarRental.Domain.Enums
+@using CarRental.BLL.Interfaces.Services
+@model (CarRental.BLL.DTOs.Car.CarDto Car, CarRental.Web.ViewModels.Car.BookCarViewModel? BookingModel)
+@inject ISiteSettingsService SiteSettings
+
+@{
+    ViewData["Title"] = $"{Model.Car?.Brand} {Model.Car?.Model}";
+    Layout = "_Layout";
+    
+    var car = Model.Car;
+    var bookingModel = Model.BookingModel;
+    var isAuthenticated = User?.Identity?.IsAuthenticated == true;
+    var settings = SiteSettings.GetSettings();
+
+    var pricePerDay = Model.Car?.PricePerDay ?? 0;
+    var pricePerDayJs = pricePerDay.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    var pricePerDay15 = car?.PricePerDay15 ?? 0;
+    var pricePerDay15Js = pricePerDay15.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    var pricePerDay30 = car?.PricePerDay30 ?? 0;
+    var pricePerDay30Js = pricePerDay30.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    var depositAmount = car?.Deposit ?? 0;
+    var depositJs = depositAmount.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    var unlimitedMileagePrice = car?.UnlimitedMileagePrice > 0 ? car.UnlimitedMileagePrice : 2000;
+    var unlimitedMileagePriceJs = unlimitedMileagePrice.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    // ИСПРАВЛЕНО: теперь overMileagePriceJs использует правильную переменную overMileagePrice
+    var overMileagePrice = car?.OverMileagePricePerKm > 0 ? car.OverMileagePricePerKm : 2000;
+    var overMileagePriceJs = overMileagePrice.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+
+    var mileageLimit = car?.MileageLimitPerDay ?? 250;
+    var mileageLimitJs = mileageLimit.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    
+    var images = car?.Images != null 
+        ? car.Images.OrderBy(i => i.DisplayOrder).ToList() 
+        : new List<CarImageDto>();
+    var mainImage = images.FirstOrDefault(i => i.IsMain) ?? images.FirstOrDefault();
+}
+
+<div class="car-details-container">
+    <script type="application/ld+json">
+        {       
+        "@@context": "https://schema.org",
+        "@@type": "Car",
+        "name": "@Model.Car?.Brand @Model.Car?.Model",
+        "description": "@HttpUtility.JavaScriptStringEncode(Model.Car?.Description ?? "")",
+        "modelDate": "@Model.Car?.Year",
+        "image": "@($"{Context.Request.Scheme}://{Context.Request.Host}{Model.Car?.MainImageUrl}")",
+        "offers": {
+            "@@type": "Offer",
+            "price": "@Model.Car?.PricePerDay",
+            "priceCurrency": "RUB",
+            "availability": "@(Model.Car?.IsAvailable == true ? "https://schema.org/InStock" : "https://schema.org/OutOfStock")",
+            "url": "@($"{Context.Request.Scheme}://{Context.Request.Host}{Url.Action("Details", "Car", new { id = Model.Car?.Id })}")"
+            }
+        }
+    </script>
+    <!-- Hero Section с каруселью -->
+    <div class="car-details-hero">
+        @if (images.Any())
+        {
+            <div id="carCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    @for (int i = 0; i < images.Count; i++)
+                    {
+                        <button type="button" data-bs-target="#carCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-label="Слайд @(i+1)"></button>
+                    }
+                </div>
+                <div class="carousel-inner">
+                    @for (int i = 0; i < images.Count; i++)
+                    {
+                        var img = images[i];
+                        <div class="carousel-item @(i == 0 ? "active" : "")">                            
+                            <img src="@img.ImageUrl" class="d-block w-100" alt="@car?.Brand @car?.Model" style="height:500px; object-fit:contain; background:#1a1e24;">                            
+                        </div>
+                    }
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                </button>
+            </div>
+            @if (images.Count > 1)
+            {
+                <div class="thumbnail-row d-flex gap-2 flex-wrap mt-3 justify-content-center">
+                    @foreach (var img in images)
+                    {
+                        <div class="thumbnail-item" data-bs-target="#carCarousel" data-bs-slide-to="@images.IndexOf(img)" style="cursor:pointer;">
+                            <img src="@img.ImageUrl" class="thumbnail-img" alt="Миниатюра" style="width:80px; height:60px; object-fit:cover; border-radius:6px; border:2px solid transparent;">
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="car-details-image bg-secondary d-flex align-items-center justify-content-center" style="height:500px;">
+                <i class="fas fa-car fa-6x text-muted"></i>
+            </div>
+        }
+        
+        <div class="car-details-overlay">
+            <div class="container-xxl">
+                <h1 class="car-details-title">@car?.Brand @car?.Model</h1>
+                <p class="car-details-subtitle">
+                    @GetCarClassDisplay(car?.Class ?? CarClass.Standard) • @car?.Year год • @GetTransmissionDisplay(car?.Transmission ?? TransmissionType.Automatic)
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container-xxl">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="car-specs-grid">
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fas fa-gas-pump"></i></div>
+                        <div class="car-spec-value">@GetFuelTypeDisplay(car?.FuelType ?? FuelType.Petrol)</div>
+                        <div class="car-spec-label">Тип топлива</div>
+                    </div>
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="car-spec-value">@GetTransmissionDisplay(car?.Transmission ?? TransmissionType.Automatic)</div>
+                        <div class="car-spec-label">Коробка передач</div>
+                    </div>
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fas fa-user-friends"></i></div>
+                        <div class="car-spec-value">@car?.Seats мест</div>
+                        <div class="car-spec-label">Вместимость</div>
+                    </div>
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fas fa-tachometer-alt"></i></div>
+                        <div class="car-spec-value">@car?.EngineCapacity л</div>
+                        <div class="car-spec-label">Объем двигателя</div>
+                    </div>
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fas fa-fas fa-road"></i></div>
+                        <div class="car-spec-value">@car?.MileageLimitPerDay км</div>
+                        <div class="car-spec-label">Ограничение по километражу/сут</div>
+                    </div>
+                    <div class="car-spec-card hover-lift">
+                        <div class="car-spec-icon"><i class="fa fa-rub"></i></div>
+                        <div class="car-spec-value">@car?.Deposit.ToString("N0") ₽</div>
+                        <div class="car-spec-label">Сумма депозита</div>
+                    </div>
+                </div>
+                
+                @if (!string.IsNullOrEmpty(car?.Description))
+                {
+                    <div class="card-modern mb-4">
+                        <div class="card-header-modern">
+                            <h3 class="mb-0">Описание автомобиля</h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <p class="mb-0">@car.Description</p>
+                        </div>
+                    </div>
+                }
+                
+                <!-- Детальные характеристики -->
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="mb-0">Детальные характеристики</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3"><strong>Бренд:</strong> @car?.Brand</div>
+                                <div class="mb-3"><strong>Модель:</strong> @car?.Model</div>
+                                <div class="mb-3"><strong>Класс:</strong> @GetCarClassDisplay(car?.Class ?? CarClass.Standard)</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3"><strong>Цвет:</strong> @car?.Color</div>
+                                <div class="mb-3"><strong>Объем двигателя:</strong> @car?.EngineCapacity л</div>
+                                <div class="mb-3"><strong>Год выпуска:</strong> @car?.Year</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ьаблица стоимости -->
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h3 class="mb-0">Детали рассчета стоимости</h3>
+                    </div>
+                    <div class="card-body-modern">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3"><strong>Стоимость аренды:</strong> @car?.PricePerDay.ToString("N0") ₽/сут</div>
+                                <div class="mb-3"><strong>Стоимость аренды от 15 сут:</strong> @car?.PricePerDay15.ToString("N0") ₽/сут</div>
+                                <div class="mb-3"><strong>Стоимость аренды от 30 сут:</strong> @car?.PricePerDay30.ToString("N0") ₽/сут</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3"><strong>Стоимость перепробега:</strong> @car?.OverMileagePricePerKm.ToString("N0") ₽/км</div>
+                                <div class="mb-3"><strong>Ограничение по километражу:</strong> @car?.MileageLimitPerDay км</div>
+                                <div class="mb-3"><strong>Сумма депозита:</strong> @car?.Deposit.ToString("N0") ₽</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Требования к арендатору  -->
+                @if (settings.RenterRequirements != null && settings.RenterRequirements.Any())
+                {
+                    <div class="card-modern mt-4">
+                        <div class="card-header-modern">
+                            <h3 class="mb-0">Требования к арендатору</h3>
+                        </div>
+                        <div class="card-body-modern">
+                            <ul class="list-unstyled mb-0">
+                                @foreach (var req in settings.RenterRequirements)
+                                {
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>@req.Question</strong> — @req.ExpectedAnswer
+                                    </li>
+                                }
+                            </ul>
+                            <div class="alert alert-warning mt-3 mb-0 small">
+                                <i class="fas fa-info-circle"></i> Пожалуйста, убедитесь, что вы соответствуете указанным требованиям перед бронированием.
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 6.5rem;">
+                    <div class="card-modern mb-4">
+                        <div class="card-body-modern">
+                            <div class="d-flex justify-content-between align-items-start mb-4">
+                                <div>
+                                    <h4 class="mb-1">@car?.Brand @car?.Model</h4>
+                                    <p class="text-muted mb-0">@car?.Class • @car?.Year</p>
+                                </div>
+                                <span class="badge @(car?.IsAvailable == true ? "bg-success" : "bg-danger")">
+                                    @(car?.IsAvailable == true ? "Доступен" : "Занят")
+                                </span>
+                            </div>
+                            
+                            <div class="text-center mb-4">
+                                <div class="car-price-modern">
+                                    @car?.PricePerDay.ToString("C0")
+                                    <span class="d-block text-sm">в сутки</span>
+                                </div>
+                            </div>
+                            
+                            @if (isAuthenticated && car?.IsAvailable == true)
+                            {
+                                <button class="btn-primary-modern btn-modern w-100 mb-3" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                                    <i class="fas fa-calendar-check me-2"></i> Забронировать сейчас
+                                </button>
+                            }
+                            else if (!isAuthenticated && car?.IsAvailable == true)
+                            {
+                                <button class="btn-primary-modern btn-modern w-100 mb-2" data-bs-toggle="modal" data-bs-target="#guestBookingModal">
+                                    <i class="fas fa-calendar-check me-2"></i> Забронировать
+                                </button>
+                                <div class="text-center text-muted small mb-3">
+                                    <i class="fas fa-info-circle me-1"></i> 
+                                    <a href="/Account/Login?returnUrl=@Url.Action("Details", "Car", new { id = car?.Id })" class="text-muted">Войдите</a> или 
+                                    <a href="/Account/Register?returnUrl=@Url.Action("Details", "Car", new { id = car?.Id })" class="text-muted">зарегистрируйтесь</a> для более быстрого бронирования.
+                                </div>
+                            }
+                            else if (car?.IsAvailable == false)
+                            {
+                                <div class="alert alert-warning mb-3">
+                                    <p class="mb-0">Этот автомобиль в настоящее время недоступен для бронирования</p>
+                                </div>
+                            }
+                            
+                            <a href="/Car" class="btn-outline-modern btn-modern w-100">
+                                <i class="fas fa-arrow-left me-2"></i> Назад к каталогу
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-modern">
+                        <div class="card-header-modern">
+                            <h5 class="mb-0">Контакты</h5>
+                        </div>
+                        <div class="card-body-modern">
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-phone text-primary me-3"></i>
+                                <div><small class="text-muted d-block">Телефон</small><strong>@settings.Phone</strong></div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-envelope text-primary me-3"></i>
+                                <div><small class="text-muted d-block">Email</small><strong>@settings.Email</strong></div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-clock text-primary me-3"></i>
+                                <div><small class="text-muted d-block">Режим работы</small><strong>10:00 - 20:00</strong></div>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <small class="text-muted d-block mb-2">Свяжитесь с нами в мессенджерах</small>
+                                <div class="d-flex justify-content-center gap-3">
+                                    @if (!string.IsNullOrEmpty(settings.WhatsAppUrl))
+                                    {
+                                        <a href="@settings.WhatsAppUrl" class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" title="WhatsApp">
+                                            <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrEmpty(settings.TelegramUrl))
+                                    {
+                                        <a href="@settings.TelegramUrl" class="btn btn-sm btn-outline-info" target="_blank" rel="noopener" title="Telegram">
+                                            <i class="fab fa-telegram me-1"></i> Telegram
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrEmpty(settings.MaxUrl))
+                                    {
+                                        <a href="@settings.MaxUrl" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" title="Messenger MAX">
+                                            <span class="max-logo-icon" style="margin-right: 4px;"></span> MAX
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetCarClassDisplay(CarClass carClass) => carClass switch
+    {
+        CarClass.Standard => "Стандарт",
+        CarClass.SUV => "Кроссовер",
+        CarClass.Business => "Бизнес",
+        CarClass.Minivan => "Минивэн",
+        _ => carClass.ToString()
+    };
+    
+    string GetFuelTypeDisplay(FuelType fuelType) => fuelType switch
+    {
+        FuelType.Petrol => "Бензин",
+        FuelType.Diesel => "Дизель",
+        FuelType.Hybrid => "Гибрид",
+        _ => fuelType.ToString()
+    };
+    
+    string GetTransmissionDisplay(TransmissionType transmission) => transmission switch
+    {
+        TransmissionType.Manual => "Механика",
+        TransmissionType.Automatic => "Автомат",
+        _ => transmission.ToString()
+    };
+}
+
+<!-- Модальное окно бронирования -->
+@if (isAuthenticated && bookingModel != null && car?.IsAvailable == true)
+{
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0" style="background: #111827; color: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+                <div class="modal-header border-bottom border-gray-800 px-4 py-3" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%); backdrop-filter: blur(10px);">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title fw-semibold text-white mb-0">Бронирование автомобиля</h5>
+                        <p class="text-gray-400 mb-0 small mt-1">@car?.Brand @car?.Model</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white opacity-70" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <form method="post" action="@Url.Action("BookCar", "Booking")" id="bookingForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="CarId" value="@car?.Id" />
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Дата начала</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="text" id="StartDate" name="StartDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                </div>
+                                <div class="form-text text-gray-500 mt-2 small">Доступно с сегодняшнего дня</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Дата окончания</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-check"></i></span>
+                                    <input type="text" id="EndDate" name="EndDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                </div>
+                                <div class="form-text text-gray-500 mt-2 small">Минимальный срок — от 1 дня</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="text-white fw-medium mb-3">Дополнительные услуги</h6>
+                            <div class="form-check form-check-dark mb-3">
+                                <input class="form-check-input" type="checkbox" id="needDelivery" name="NeedDelivery" value="true">
+                                <label class="form-check-label text-white d-flex align-items-center" for="needDelivery">
+                                    <span class="icon-wrapper me-3"><i class="fas fa-truck text-gray-400"></i></span>
+                                    <span><span class="d-block fw-normal">Доставка автомобиля</span><small class="text-gray-500">Доставка к указанному месту</small></span>
+                                </label>
+                            </div>
+                            <div class="ps-4 mb-3" id="deliveryOptions" style="display: none;">
+                                <select name="DeliveryLocation" class="form-select bg-gray-900 border-gray-700 text-white" id="deliveryLocation">
+                                    <option value="">Выберите место доставки</option>
+                                    <option value="Sheremetyevo">Шереметьево (+4 500 ₽)</option>
+                                    <option value="Vnukovo">Внуково (+3 500 ₽)</option>
+                                    <option value="Domodedovo">Домодедово (+6 000 ₽)</option>
+                                    <option value="Moscow">По Москве (индивидуально)</option>
+                                </select>
+                            </div>
+                            <div class="form-check form-check-dark">
+                                <input class="form-check-input" type="checkbox" id="unlimitedMileage" name="UnlimitedMileage" value="true">
+                                <label class="form-check-label text-white d-flex align-items-center" for="unlimitedMileage">
+                                    <span class="icon-wrapper me-3"><i class="fas fa-infinity text-gray-400"></i></span>
+                                    <span><span class="d-block fw-normal">Безлимитный пробег</span><small class="text-gray-500">@car?.UnlimitedMileagePrice.ToString("N0") ₽ за каждые сутки аренды</small></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div><div class="text-gray-400 small mb-1">Период аренды</div><div class="text-white fw-medium" id="rentalPeriod">—</div></div>
+                                <div class="text-end"><div class="text-gray-400 small mb-1">Общая стоимость</div><div class="text-white h4 mb-0 fw-semibold" id="totalPrice">—</div></div>
+                            </div>
+                            <div class="text-gray-500 small" id="priceBreakdown"></div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3" style="background: #1e293b; border-color: #334155; color: #bae6fd;">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            <strong>Обеспечительный платёж @car?.Deposit.ToString("N0") ₽</strong> будет временно заблокирован на вашей карте.
+                            <a href="/Home/FAQ#deposit" target="_blank" style="color: #7dd3fc;">Подробнее в FAQ</a>
+                        </div>
+
+                        <!-- Чекбокс согласия с офертой -->
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" name="AgreeTerms" required>
+                            <label class="form-check-label text-white" for="agreeTerms">
+                                Я согласен с <a href="/Home/Terms" target="_blank" style="color: #7dd3fc;">условиями оферты</a>
+                            </label>
+                        </div>
+                        
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary flex-grow-1 py-3 fw-semibold" id="submitBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: none;">
+                                <i class="fas fa-check-circle me-2"></i>Подтвердить бронирование
+                            </button>
+                            <button type="button" class="btn btn-outline-light border-gray-700 text-white px-4 py-3" data-bs-dismiss="modal">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (!isAuthenticated && car?.IsAvailable == true)
+{
+    <div class="modal fade" id="guestBookingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0" style="background: #111827; color: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);">
+                <div class="modal-header border-bottom border-gray-800 px-4 py-3" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%); backdrop-filter: blur(10px);">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title fw-semibold text-white mb-0">Бронирование автомобиля</h5>
+                        <p class="text-gray-400 mb-0 small mt-1">@car?.Brand @car?.Model</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white opacity-70" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <form id="guestBookingForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="guestCarId" name="CarId" value="@car?.Id" />
+                        
+                        <!-- Контактные данные -->
+                        <h6 class="text-white fw-medium mb-3">Ваши данные</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">ФИО *</label>
+                                <input type="text" id="guestFullName" name="FullName" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Иванов Иван Иванович" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Телефон *</label>
+                                <input type="tel" id="guestPhone" name="Phone" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="+7 (___) ___-__-__" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Email *</label>
+                                <input type="email" id="guestEmail" name="Email" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Даты аренды -->
+                        <h6 class="text-white fw-medium mb-3">Даты аренды</h6>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Дата начала</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="text" id="guestStartDate" name="StartDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                </div>
+                                <div class="form-text text-gray-500 mt-2 small">Доступно с сегодняшнего дня</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-white fw-medium mb-2">Дата окончания</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-gray-900 border-gray-700 text-gray-300"><i class="fas fa-calendar-check"></i></span>
+                                    <input type="text" id="guestEndDate" name="EndDate" class="form-control bg-gray-900 border-gray-700 text-white" placeholder="Выберите дату" required />
+                                </div>
+                                <div class="form-text text-gray-500 mt-2 small">Минимальный срок — от 1 дня</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Дополнительные услуги -->
+                        <h6 class="text-white fw-medium mb-3">Дополнительные услуги</h6>
+                        <div class="mb-4">
+                            <div class="form-check form-check-dark mb-3">
+                                <input class="form-check-input" type="checkbox" id="guestNeedDelivery" name="NeedDelivery" value="true">
+                                <label class="form-check-label text-white d-flex align-items-center" for="guestNeedDelivery">
+                                    <span class="icon-wrapper me-3"><i class="fas fa-truck text-gray-400"></i></span>
+                                    <span><span class="d-block fw-normal">Доставка автомобиля</span><small class="text-gray-500">Доставка к указанному месту</small></span>
+                                </label>
+                            </div>
+                            <div class="ps-4 mb-3" id="guestDeliveryOptions" style="display: none;">
+                                <select name="DeliveryLocation" class="form-select bg-gray-900 border-gray-700 text-white" id="guestDeliveryLocation">
+                                    <option value="">Выберите место доставки</option>
+                                    <option value="Sheremetyevo">Шереметьево (+4 500 ₽)</option>
+                                    <option value="Vnukovo">Внуково (+3 500 ₽)</option>
+                                    <option value="Domodedovo">Домодедово (+6 000 ₽)</option>
+                                    <option value="Moscow">По Москве (индивидуально)</option>
+                                </select>
+                            </div>
+                            <div class="form-check form-check-dark">
+                                <input class="form-check-input" type="checkbox" id="guestUnlimitedMileage" name="UnlimitedMileage" value="true">
+                                <label class="form-check-label text-white d-flex align-items-center" for="guestUnlimitedMileage">
+                                    <span class="icon-wrapper me-3"><i class="fas fa-infinity text-gray-400"></i></span>
+                                    <span><span class="d-block fw-normal">Безлимитный пробег</span><small class="text-gray-500">@car?.UnlimitedMileagePrice.ToString("N0") ₽ за каждые сутки аренды</small></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Расчёт стоимости -->
+                        <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div><div class="text-gray-400 small mb-1">Период аренды</div><div class="text-white fw-medium" id="guestRentalPeriod">—</div></div>
+                                <div class="text-end"><div class="text-gray-400 small mb-1">Общая стоимость</div><div class="text-white h4 mb-0 fw-semibold" id="guestTotalPrice">—</div></div>
+                            </div>
+                            <div class="text-gray-500 small" id="guestPriceBreakdown"></div>
+                        </div>
+                        
+                        <!-- Депозит -->
+                        <div class="alert alert-info mt-3" style="background: #1e293b; border-color: #334155; color: #bae6fd;">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            <strong>Обеспечительный платёж @car?.Deposit.ToString("N0") ₽</strong> будет временно заблокирован на вашей карте.
+                            <a href="/Home/FAQ#deposit" target="_blank" style="color: #7dd3fc;">Подробнее в FAQ</a>
+                        </div>
+
+                        <!-- Чекбокс согласия с офертой -->
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" id="guestAgreeTerms" name="AgreeTerms" required>
+                            <label class="form-check-label text-white" for="guestAgreeTerms">
+                                Я согласен с <a href="/Home/Terms" target="_blank" style="color: #7dd3fc;">условиями оферты</a>
+                            </label>
+                        </div>
+                        
+                        <!-- Кнопки -->
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary flex-grow-1 py-3 fw-semibold" id="guestSubmitBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: none;" disabled>
+                                <i class="fas fa-check-circle me-2"></i>Отправить заявку
+                            </button>
+                            <button type="button" class="btn btn-outline-light border-gray-700 text-white px-4 py-3" data-bs-dismiss="modal">Отмена</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/lib/flatpickr/flatpickr.min.css" />
+    <style>
+        .flatpickr-calendar {
+            z-index: 1060 !important; /* выше модального окна Bootstrap */
+            background: #1f2937 !important;
+            border-color: #374151 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .flatpickr-month {
+            color: #fff !important;
+        }
+        .flatpickr-weekday {
+            color: #9ca3af !important;
+        }
+        .flatpickr-day {
+            color: #fff !important;
+        }
+        .flatpickr-day.disabled {
+            color: #6b7280 !important;
+        }
+        .flatpickr-day.selected {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+        }
+        .flatpickr-day:hover:not(.disabled) {
+            background: #374151 !important;
+        }
+        .flatpickr-current-month .flatpickr-monthDropdown-months,
+        .flatpickr-current-month input.cur-year {
+            color: #fff !important;
+        }
+        .flatpickr-prev-month, .flatpickr-next-month {
+            fill: #fff !important;
+        }
+        #StartDate, #EndDate {
+            color: #ffffff !important;
+            background-color: #1f2937 !important;
+        }
+        #StartDate::placeholder, #EndDate::placeholder {
+            color: #9ca3af !important;
+        }
+        .flatpickr-calendar {
+            background: #1f2937;
+            border: 1px solid #374151;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .flatpickr-months .flatpickr-month,
+        .flatpickr-current-month .flatpickr-monthDropdown-months,
+        .flatpickr-current-month input.cur-year {
+            color: #f1f5f9;
+            fill: #f1f5f9;
+        }
+        .flatpickr-months .flatpickr-prev-month,
+        .flatpickr-months .flatpickr-next-month {
+            fill: #9ca3af;
+        }
+        .flatpickr-months .flatpickr-prev-month:hover,
+        .flatpickr-months .flatpickr-next-month:hover {
+            fill: #ffffff;
+        }
+        .flatpickr-weekdays {
+            background: #1e293b;
+        }
+        span.flatpickr-weekday {
+            color: #cbd5e1;
+        }
+        .flatpickr-day {
+            color: #e2e8f0;
+            border-color: transparent;
+        }
+        .flatpickr-day:hover {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        .flatpickr-day.today {
+            border-color: #3b82f6;
+        }
+        .flatpickr-day.selected {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+        }
+        .flatpickr-day.disabled,
+        .flatpickr-day.disabled:hover {
+            color: #6b7280;
+            background: transparent;
+            border-color: transparent;
+        }
+        .flatpickr-time input {
+            color: #f1f5f9;
+            background: #1f2937;
+        }
+        .flatpickr-time .flatpickr-time-separator {
+            color: #9ca3af;
+        }
+        .flatpickr-time .numInputWrapper span.arrowUp:after {
+            border-bottom-color: #9ca3af;
+        }
+        .flatpickr-time .numInputWrapper span.arrowDown:after {
+            border-top-color: #9ca3af;
+        }
+        .flatpickr-day.flatpickr-disabled {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+            color: #f87171 !important;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            border-color: transparent !important;
+        }
+        .flatpickr-day.flatpickr-disabled:hover {
+            background-color: rgba(239, 68, 68, 0.3) !important;
+        }
+        #deliveryLocation,
+        #deliveryLocation option {
+            background-color: #1f2937 !important;  /* тёмный фон (как bg-gray-900) */
+            color: #f1f5f9 !important;             /* светлый текст */
+            border-color: #374151 !important;
+        }
+
+        /* Если у вас есть светлая тема (без атрибута data-theme="dark") */
+        :root:not([data-theme="dark"]) #deliveryLocation,
+        :root:not([data-theme="dark"]) #deliveryLocation option {
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            border-color: #e2e8f0 !important;
+        }
+    </style>
+    
+}
+
+@section Scripts {
+    <script src="~/lib/flatpickr/flatpickr.min.js"></script>
+    <script src="~/lib/flatpickr/ru.js"></script>
+    <script>
+        // ========== ГОСТЕВОЕ БРОНИРОВАНИЕ (с расчётом) ==========
+        (function() {
+            const modalElement = document.getElementById('guestBookingModal');
+            if (!modalElement) return;
+
+            let fpStart = null, fpEnd = null;
+            const pricePerDay = @pricePerDayJs;
+            const pricePerDay15 = @pricePerDay15Js;
+            const pricePerDay30 = @pricePerDay30Js;
+            const deposit = @depositJs;
+            const unlimitedPricePerDay = @unlimitedMileagePriceJs;
+            const overMileagePricePerKm = @overMileagePriceJs;
+            const mileageLimit = @mileageLimitJs;
+
+            const startInput = document.getElementById('guestStartDate');
+            const endInput = document.getElementById('guestEndDate');
+            const needDelivery = document.getElementById('guestNeedDelivery');
+            const deliveryOptions = document.getElementById('guestDeliveryOptions');
+            const deliveryLocation = document.getElementById('guestDeliveryLocation');
+            const unlimitedMileage = document.getElementById('guestUnlimitedMileage');
+            const rentalPeriodEl = document.getElementById('guestRentalPeriod');
+            const totalPriceEl = document.getElementById('guestTotalPrice');
+            const priceBreakdownEl = document.getElementById('guestPriceBreakdown');
+            const agreeCheck = document.getElementById('guestAgreeTerms');
+            const submitBtn = document.getElementById('guestSubmitBtn');
+            const form = document.getElementById('guestBookingForm');
+
+            function destroyFlatpickr() {
+                if (fpStart) { fpStart.destroy(); fpStart = null; }
+                if (fpEnd) { fpEnd.destroy(); fpEnd = null; }
+            }
+
+            modalElement.addEventListener('shown.bs.modal', function() {
+                destroyFlatpickr();
+
+                // Показываем плейсхолдеры
+                startInput.placeholder = "Загрузка...";
+                endInput.placeholder = "Загрузка...";
+
+                // Загружаем занятые даты
+                fetch('/api/bookings/occupied-dates?carId=@car?.Id')
+                    .then(r => r.ok ? r.json() : Promise.reject('Ошибка сервера'))
+                    .then(disabledDates => {
+                        fpStart = flatpickr('#guestStartDate', {
+                            minDate: 'today',
+                            dateFormat: 'Y-m-d',
+                            locale: 'ru',
+                            disable: disabledDates,   // ← теперь занятые даты передаются
+                            static: true,
+                            onChange: function(selectedDates, dateStr) {
+                                if (fpEnd) fpEnd.set('minDate', dateStr);
+                                updatePrice();
+                            }
+                        });
+
+                        fpEnd = flatpickr('#guestEndDate', {
+                            minDate: new Date().fp_incr(1),
+                            dateFormat: 'Y-m-d',
+                            locale: 'ru',
+                            disable: disabledDates,   // ← и здесь
+                            static: true,
+                            onChange: updatePrice
+                        });
+
+                        // Устанавливаем даты по умолчанию
+                        const today = new Date();
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        fpStart.setDate(today);
+                        fpEnd.setDate(tomorrow);
+
+                        startInput.placeholder = 'Выберите дату';
+                        endInput.placeholder = 'Выберите дату';
+                        updatePrice();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        startInput.placeholder = 'Ошибка загрузки';
+                        endInput.placeholder = 'Ошибка загрузки';
+                        alert('Не удалось загрузить занятые даты. Попробуйте позже.');
+                    });
+
+                // Сброс формы
+                form.reset();
+                if (agreeCheck) agreeCheck.checked = false;
+                if (submitBtn) submitBtn.disabled = true;
+                if (deliveryOptions) deliveryOptions.style.display = 'none';
+            });
+
+            modalElement.addEventListener('hidden.bs.modal', destroyFlatpickr);
+
+            if (agreeCheck) {
+                agreeCheck.addEventListener('change', function() {
+                    submitBtn.disabled = !this.checked;
+                });
+            }
+
+            function updatePrice() {
+                if (!startInput.value || !endInput.value) return;
+                const start = new Date(startInput.value);
+                const end = new Date(endInput.value);
+                start.setHours(0,0,0,0);
+                end.setHours(0,0,0,0);
+                if (isNaN(start) || isNaN(end)) return;
+
+                let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                days = Math.max(1, days);
+
+                let rate = pricePerDay;
+                if (days >= 30 && pricePerDay30 > 0) rate = pricePerDay30;
+                else if (days >= 15 && pricePerDay15 > 0) rate = pricePerDay15;
+
+                let basePrice = rate * days;
+                let deliveryPrice = 0;
+                if (needDelivery && needDelivery.checked && deliveryLocation && deliveryLocation.value) {
+                    const prices = { 'Sheremetyevo': 4500, 'Vnukovo': 3500, 'Domodedovo': 6000, 'Moscow': 0 };
+                    deliveryPrice = prices[deliveryLocation.value] || 0;
+                }
+                const unlimitedPrice = unlimitedMileage && unlimitedMileage.checked ? unlimitedPricePerDay * days : 0;
+                const rentTotal = basePrice + deliveryPrice + unlimitedPrice;
+                const totalWithDeposit = rentTotal + deposit;
+                const totalMileage = mileageLimit * days;
+
+                rentalPeriodEl.textContent = days + ' ' + getDaysWord(days);
+                totalPriceEl.textContent = formatCurrency(rentTotal);
+
+                let breakdown = `${formatCurrency(rate)} × ${days} ${getDaysWord(days)}`;
+                if (deliveryPrice > 0) breakdown += ` + доставка ${formatCurrency(deliveryPrice)}`;
+                if (unlimitedPrice > 0) breakdown += ` + безлимит ${formatCurrency(unlimitedPrice)}`;
+                breakdown += ` = ${formatCurrency(rentTotal)}`;
+                breakdown += `<br><strong>Включённый пробег: ${mileageLimit} км/сут × ${days} сут = ${totalMileage} км</strong>`;
+                breakdown += `<br><strong>Стоимость перепробега: ${formatCurrency(overMileagePricePerKm)}/км (оплачивается отдельно при превышении лимита ${mileageLimit} км/сут)</strong>`;
+                breakdown += `<br><span class="text-warning">➕ Залог (возвратный): ${formatCurrency(deposit)}</span>`;
+                breakdown += `<br><strong>Итого к блокировке: ${formatCurrency(totalWithDeposit)}</strong>`;
+                priceBreakdownEl.innerHTML = breakdown;
+            }
+
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(amount);
+            }
+            function getDaysWord(d) {
+                if (d % 10 === 1 && d % 100 !== 11) return 'день';
+                if (d % 10 >= 2 && d % 10 <= 4 && (d % 100 < 10 || d % 100 >= 20)) return 'дня';
+                return 'дней';
+            }
+
+            if (needDelivery) {
+                needDelivery.addEventListener('change', function() {
+                    deliveryOptions.style.display = this.checked ? 'block' : 'none';
+                    if (!this.checked) deliveryLocation.value = '';
+                    updatePrice();
+                });
+            }
+            if (deliveryLocation) deliveryLocation.addEventListener('change', updatePrice);
+            if (unlimitedMileage) unlimitedMileage.addEventListener('change', updatePrice);
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (!agreeCheck || !agreeCheck.checked) {
+                    alert('Необходимо согласиться с условиями оферты');
+                    return;
+                }
+
+                const payload = {
+                    carId: document.getElementById('guestCarId').value,
+                    startDate: startInput.value,
+                    endDate: endInput.value,
+                    name: document.getElementById('guestFullName').value,
+                    phone: document.getElementById('guestPhone').value,
+                    email: document.getElementById('guestEmail').value,
+                    unlimitedMileage: unlimitedMileage?.checked ?? false,
+                    deliveryLocation: deliveryLocation?.value || null
+                };
+
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+
+                try {
+                    const response = await fetch('/Booking/QuickBook', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(modalElement).hide();
+                        alert('✅ ' + result.message);
+                    } else {
+                        alert('❌ Ошибка: ' + (result.message || (result.errors ? result.errors.join(', ') : 'Неизвестная ошибка')));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка сети. Попробуйте позже.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalElement = document.getElementById('bookingModal');
+            if (!modalElement) return;
+            
+            let bookingModal = null;
+            let fpStart = null, fpEnd = null;
+            const pricePerDay = @pricePerDayJs;
+            const pricePerDay15 = @pricePerDay15Js;
+            const pricePerDay30 = @pricePerDay30Js;
+            const deposit = @depositJs;
+            const unlimitedPricePerDay = @unlimitedMileagePriceJs;
+            const overMileagePricePerKm = @overMileagePriceJs;   // Добавлено для возможного использования
+            const mileageLimit = @mileageLimitJs;
+            
+            const startInput = document.getElementById('StartDate');
+            const endInput = document.getElementById('EndDate');
+            const needDelivery = document.getElementById('needDelivery');
+            const deliveryOptions = document.getElementById('deliveryOptions');
+            const deliveryLocation = document.getElementById('deliveryLocation');
+            const unlimitedMileage = document.getElementById('unlimitedMileage');
+            const rentalPeriodEl = document.getElementById('rentalPeriod');
+            const totalPriceEl = document.getElementById('totalPrice');
+            const priceBreakdownEl = document.getElementById('priceBreakdown');
+            const agreeCheck = document.getElementById('agreeTerms');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!startInput || !endInput) return;
+
+            // Функция очистки календарей
+            function destroyFlatpickr() {
+                if (fpStart) { fpStart.destroy(); fpStart = null; }
+                if (fpEnd) { fpEnd.destroy(); fpEnd = null; }
+            }
+
+            // Функция очистки backdrop'ов
+            function removeBackdrops() {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }
+
+            // Инициализация при открытии модального окна
+            modalElement.addEventListener('show.bs.modal', function() {
+                destroyFlatpickr();
+                
+                const form = document.getElementById('bookingForm');
+                if (form) form.reset();
+                if (deliveryOptions) deliveryOptions.style.display = 'none';
+                if (agreeCheck) agreeCheck.checked = false;
+                if (submitBtn) submitBtn.disabled = true;
+                
+                startInput.placeholder = "Загрузка...";
+                endInput.placeholder = "Загрузка...";
+                
+                fetch('/api/bookings/occupied-dates?carId=@car?.Id')
+                    .then(r => r.ok ? r.json() : Promise.reject('Ошибка сервера'))
+                    .then(disabledDates => {
+                        fpStart = flatpickr(startInput, {
+                            minDate: "today",
+                            dateFormat: "Y-m-d",
+                            locale: "ru",
+                            disable: disabledDates,
+                            static: true,
+                            onChange: function(selectedDates, dateStr) {
+                                if (fpEnd) fpEnd.set('minDate', dateStr);
+                                updatePrice();
+                            }
+                        });
+                        
+                        fpEnd = flatpickr(endInput, {
+                            minDate: new Date().fp_incr(1),
+                            dateFormat: "Y-m-d",
+                            locale: "ru",
+                            disable: disabledDates,
+                            static: true,
+                            onChange: updatePrice
+                        });
+                        
+                        const today = new Date();
+                        const tomorrow = new Date(today);
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        fpStart.setDate(today);
+                        fpEnd.setDate(tomorrow);
+                        
+                        startInput.placeholder = "Выберите дату";
+                        endInput.placeholder = "Выберите дату";
+                        updatePrice();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        startInput.placeholder = "Ошибка загрузки";
+                        endInput.placeholder = "Ошибка загрузки";
+                        alert('Не удалось загрузить занятые даты. Попробуйте позже.');
+                    });
+            });
+            
+            // При скрытии модального окна
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                destroyFlatpickr();
+                removeBackdrops();
+            });
+
+            // При закрытии через ESC или клик на backdrop также очищаем
+            modalElement.addEventListener('hide.bs.modal', function() {
+                destroyFlatpickr();
+            });
+
+            bookingModal = new bootstrap.Modal(modalElement);
+            
+            if (agreeCheck) {
+                agreeCheck.addEventListener('change', function() {
+                    if (submitBtn) submitBtn.disabled = !this.checked;
+                });
+            }
+
+            function updatePrice() {
+                if (!startInput.value || !endInput.value) return;
+                
+                // Нормализация дат (убираем влияние часовых поясов)
+                const start = new Date(startInput.value);
+                const end = new Date(endInput.value);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(0, 0, 0, 0);
+                
+                if (isNaN(start) || isNaN(end)) return;
+                
+                let days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                days = Math.max(1, days);
+                
+                // Выбор тарифа с проверкой на валидность (>0)
+                let rate = pricePerDay;
+                if (days >= 30 && pricePerDay30 > 0) {
+                    rate = pricePerDay30;
+                } else if (days >= 15 && pricePerDay15 > 0) {
+                    rate = pricePerDay15;
+                } else if (pricePerDay <= 0) {
+                    console.error('Цена за день не задана');
+                    rate = 0;
+                }
+                
+                let basePrice = rate * days;
+                
+                // Доставка
+                let deliveryPrice = 0;
+                if (needDelivery && needDelivery.checked && deliveryLocation && deliveryLocation.value) {
+                    const prices = { 'Sheremetyevo': 4500, 'Vnukovo': 3500, 'Domodedovo': 6000, 'Moscow': 0 };
+                    deliveryPrice = prices[deliveryLocation.value] || 0;
+                }
+                
+                // Безлимитный пробег
+                const unlimitedPrice = unlimitedMileage && unlimitedMileage.checked ? unlimitedPricePerDay * days : 0;
+                
+                // ИТОГО за аренду (без депозита)
+                const rentTotal = basePrice + deliveryPrice + unlimitedPrice;
+                // С депозитом (для информации)
+                const totalWithDeposit = rentTotal + deposit;
+                const totalMileage = mileageLimit * days;
+                
+                // Вывод в UI
+                rentalPeriodEl.textContent = days + ' ' + getDaysWord(days);
+                totalPriceEl.textContent = formatCurrency(rentTotal);   // ← без депозита
+                
+                // Детализация: показываем и залог отдельно
+                let breakdown = `${formatCurrency(rate)} × ${days} ${getDaysWord(days)}`;
+                if (deliveryPrice > 0) breakdown += ` + доставка ${formatCurrency(deliveryPrice)}`;
+                if (unlimitedPrice > 0) breakdown += ` + безлимит ${formatCurrency(unlimitedPrice)}`;
+                breakdown += ` = ${formatCurrency(rentTotal)}`;
+
+                
+                breakdown += `<br><strong>Включённый пробег: ${mileageLimit} км/сут × ${days} сут = ${totalMileage} км</strong>`;
+                breakdown += `<br><strong>Стоимость перепробега: ${formatCurrency(overMileagePricePerKm)}/км (оплачивается отдельно при превышении лимита ${mileageLimit} км/сут)</strong>`;
+                breakdown += `<br><span class="text-warning">➕ Залог (возвратный): ${formatCurrency(deposit)}</span>`;
+                breakdown += `<br><strong>Итого к блокировке: ${formatCurrency(totalWithDeposit)}</strong>`;
+                priceBreakdownEl.innerHTML = breakdown;
+            }
+            
+            function formatCurrency(amount) {
+                return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(amount);
+            }
+            function getDaysWord(d) {
+                if (d % 10 === 1 && d % 100 !== 11) return 'день';
+                if (d % 10 >= 2 && d % 10 <= 4 && (d % 100 < 10 || d % 100 >= 20)) return 'дня';
+                return 'дней';
+            }
+            
+            if (needDelivery) {
+                needDelivery.addEventListener('change', function() {
+                    deliveryOptions.style.display = this.checked ? 'block' : 'none';
+                    if (!this.checked) deliveryLocation.value = '';
+                    updatePrice();
+                });
+            }
+            if (deliveryLocation) deliveryLocation.addEventListener('change', updatePrice);
+            if (unlimitedMileage) unlimitedMileage.addEventListener('change', updatePrice);
+            
+            const form = document.getElementById('bookingForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    if (!agreeCheck || !agreeCheck.checked) {
+                        alert('Необходимо согласиться с условиями оферты');
+                        return;
+                    }
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Обработка...';
+                    submitBtn.disabled = true;
+                    
+                    try {
+                        const formData = new FormData(form);
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            bookingModal.hide();
+                            setTimeout(() => { if (result.redirectUrl) window.location.href = result.redirectUrl; }, 1000);
+                        } else {
+                            alert(result.message || 'Ошибка бронирования');
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                        }
+                    } catch (error) {
+                        alert('Ошибка сети');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                });
+            }
+            
+            document.getElementById('cancelBtn')?.addEventListener('click', () => bookingModal.hide());
+        });
+        
+        
+    </script>
+}

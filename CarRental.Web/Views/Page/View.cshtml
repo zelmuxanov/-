@@ -1,0 +1,14 @@
+@model CarRental.BLL.DTOs.Page.PageDto
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "_Layout";
+}
+
+<div class="container-xxl py-4">
+    <h1 class="mb-4">@Model.Title</h1>
+    <div class="card-modern">
+        <div class="card-body-modern">
+            @Html.Raw(Model.Content)
+        </div>
+    </div>
+</div>

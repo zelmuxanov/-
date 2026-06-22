@@ -1,0 +1,54 @@
+@model CarRental.Web.ViewModels.Admin.ContractTemplateViewModel
+@{
+    ViewData["Title"] = "Управление шаблоном договора";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">@ViewData["Title"]</h1>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Загрузка шаблона</h5>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(Model.CurrentTemplatePath))
+        {
+            <div class="alert alert-info">
+                <i class="fas fa-check-circle me-2"></i>
+                Текущий шаблон: <code>@Model.CurrentTemplatePath</code>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Шаблон ещё не загружен. Пожалуйста, загрузите файл .docx с тегами в квадратных скобках.
+            </div>
+        }
+
+        <form method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <label class="form-label">Файл шаблона (.docx)</label>
+                <input type="file" name="TemplateFile" class="form-control" accept=".docx" />
+                <small class="text-muted">
+                    Используйте теги: [номер], [дата], [фио], [дата_рождения], [паспорт_серия], [паспорт_номер], [паспорт_выдан], [паспорт_адрес], [ву_серия], [ву_номер], [ву_дата_выдачи], [ву_стаж], [марка], [модель], [год_выпуска], [цвет], [гос_номер], [вин], [дата_начало], [дата_конец], [аренда_суток], [аренда_стоимость]
+                </small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload me-2"></i>Загрузить
+            </button>
+        </form>
+    </div>
+</div>

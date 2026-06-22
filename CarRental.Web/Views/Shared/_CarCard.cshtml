@@ -1,0 +1,101 @@
+@model CarRental.BLL.DTOs.Car.CarDto
+
+<div class="card-modern car-card-modern">
+    <div class="car-image-container">
+        <a href="@Url.Action("Details", "Car", new { id = Model.Id })">
+            @if (!string.IsNullOrEmpty(Model.MainImageUrl))
+            {
+                <img src="@Model.MainImageUrl" class="car-image" alt="@Model.Brand @Model.Model">
+            }
+            else
+            {
+                <div class="car-image bg-secondary d-flex align-items-center justify-content-center">
+                    <i class="fas fa-car fa-3x text-muted"></i>
+                </div>
+            }
+        </a>
+        <span class="car-badge">@GetCarClassName(Model.Class.ToString())</span>
+    </div>
+    <div class="card-body-modern d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <h5 class="mb-0">@Model.Brand @Model.Model</h5>
+            <span class="badge @(Model.IsAvailable ? "bg-success" : "bg-danger")">
+                @(Model.IsAvailable ? "Доступен" : "Занят")
+            </span>
+        </div>
+        <div class="car-details-grid">
+            <div class="car-detail-item">
+                <span class="car-detail-label">Год</span>
+                <span class="car-detail-value">@Model.Year</span>
+            </div>
+            <div class="car-detail-item">
+                <span class="car-detail-label">Коробка</span>
+                <span class="car-detail-value">@GetTransmissionName(Model.Transmission.ToString())</span>
+            </div>
+            <div class="car-detail-item">
+                <span class="car-detail-label">Топливо</span>
+                <span class="car-detail-value">@GetFuelTypeName(Model.FuelType.ToString())</span>
+            </div>
+            <div class="car-detail-item">
+                <span class="car-detail-label">Мест</span>
+                <span class="car-detail-value">@Model.Seats</span>
+            </div>
+        </div>
+        <div class="mt-auto pt-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="car-price-modern">
+                    от @Model.PricePerDay30.ToString("C0")
+                    <span class="d-block">в сутки</span>
+                </div>
+            </div>
+            <a href="@Url.Action("Details", "Car", new { id = Model.Id })" 
+               class="btn-primary-modern btn-modern w-100">
+                Подробнее об автомобиле
+            </a>
+        </div>
+    </div>
+</div>
+@functions {
+    string GetCarClassName(string carClass)
+    {
+        return carClass switch
+        {
+            "Standard" => "Стандарт",
+            "SUV" => "Кроссовер",
+            "Business" => "Бизнес",
+            "Minivan" => "Минивэн",
+            _ => carClass
+        };
+    }
+    
+    string GetFuelTypeName(string fuelType)
+    {
+        return fuelType switch
+        {
+            "Petrol" => "Бензин",
+            "Diesel" => "Дизель",
+            "Hybrid" => "Гибрид",
+            _ => fuelType
+        };
+    }
+    
+    string GetTransmissionName(string transmission)
+    {
+        return transmission switch
+        {
+            "Manual" => "Механика",
+            "Automatic" => "Автомат",
+            _ => transmission
+        };
+    }
+    
+    string GetSortName(string sort)
+    {
+        return sort switch
+        {
+            "price_asc" => "Цена по возрастанию",
+            "price_desc" => "Цена по убыванию",
+            _ => sort
+        };
+    }
+}

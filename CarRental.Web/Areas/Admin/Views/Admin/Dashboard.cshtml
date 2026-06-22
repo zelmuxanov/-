@@ -1,0 +1,128 @@
+@{
+    ViewData["Title"] = "Панель управления";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // Безопасное преобразование ViewBag
+    var recentBookings = ViewBag.RecentBookings as List<dynamic> ?? new List<dynamic>();
+    var recentUsers = ViewBag.RecentUsers as List<dynamic> ?? new List<dynamic>();
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Пользователи</h5>
+                <h2 class="card-text">@ViewBag.TotalUsers</h2>
+                <p>Всего зарегистрировано</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="/Admin/Users">Подробнее</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Активные авто</h5>
+                <h2 class="card-text">@ViewBag.ActiveCars</h2>
+                <p>Доступно для аренды</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="/Admin/Cars">Подробнее</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Новые заявки</h5>
+                <h2 class="card-text">@ViewBag.NewBookings</h2>
+                <p>Требуют обработки</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="/Admin/Bookings">Подробнее</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Документы</h5>
+                <h2 class="card-text">@ViewBag.PendingDocuments</h2>
+                <p>На проверке</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="/Admin/Documents">Подробнее</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Последние бронирования</h5>
+            </div>
+            <div class="card-body">
+                @if (recentBookings.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var booking in recentBookings)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">@booking.Car?.Brand @booking.Car?.Model</h6>
+                                    <small>@booking.CreatedAt.ToString("dd.MM.yyyy")</small>
+                                </div>
+                                <p class="mb-1">@booking.User?.FirstName @booking.User?.LastName</p>
+                                <small class="text-muted">@booking.TotalPrice.ToString("N0") ₽</small>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Нет данных</p>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Новые пользователи</h5>
+            </div>
+            <div class="card-body">
+                @if (recentUsers.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var user in recentUsers)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">@user.FirstName @user.LastName</h6>
+                                    <small>@user.RegistrationDate.ToString("dd.MM.yyyy")</small>
+                                </div>
+                                <p class="mb-1">@user.Email</p>
+                                <small class="text-muted">@user.PhoneNumber</small>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Нет данных</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
