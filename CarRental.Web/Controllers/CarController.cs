@@ -128,8 +128,7 @@ public class CarController : Controller
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"💥 SEARCH ERROR: {ex.Message}");
-            Console.WriteLine($"💥 StackTrace: {ex.StackTrace}");
+            _logger.LogError(ex, "Ошибка при поиске автомобилей");
             TempData["ErrorMessage"] = "Ошибка при выполнении поиска";
             return RedirectToAction("Index");
         }
@@ -138,9 +137,7 @@ public class CarController : Controller
     private async Task LoadFilterData()
     {
         try
-        {
-            Console.WriteLine("🔄 Загрузка данных для фильтров...");
-            
+        {          
             var brands = await _carService.GetUniqueBrandsAsync();
             var models = await _carService.GetUniqueModelsAsync();
             
@@ -167,13 +164,10 @@ public class CarController : Controller
             ViewBag.Classes = classesList;
             ViewBag.FuelTypes = fuelTypesList;
             ViewBag.Transmissions = transmissionsList;
-            
-            Console.WriteLine($"📊 FILTER DATA: {brandsList.Count} brands, {modelsList.Count} models");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ ERROR LOADING FILTER DATA: {ex.Message}");
-            
+            _logger.LogError(ex, "Ошибка при загрузке данных фильтров");
             ViewBag.Brands = new List<string>();
             ViewBag.Models = new List<string>();
             ViewBag.Classes = Enum.GetValues(typeof(CarClass))

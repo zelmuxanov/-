@@ -68,9 +68,8 @@ public class EmailConfirmationController : Controller
             await _emailService.SendEmailConfirmationAsync(user, encodedToken, confirmationCode);
            
             await _emailService.SendNewUserNotificationAsync(user);
-            
-            Console.WriteLine("🎉 REGISTRATION COMPLETE - email confirmation sent");
-            
+
+            _logger.LogInformation("Подтверждение по email отправлено пользователю");            
             TempData["RegistrationSuccess"] = true;
             TempData["RegistrationEmail"] = user.Email;
             return RedirectToAction("RegistrationSuccess");
