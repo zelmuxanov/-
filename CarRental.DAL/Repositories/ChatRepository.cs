@@ -85,8 +85,7 @@ public class ChatRepository : Repository<Chat>, IChatRepository
         return await _dbSet
             .Where(c => c.TempUserId != null &&
                         c.TempUserExpiry != null &&
-                        c.TempUserExpiry <= expiryDate &&
-                        (c.Status == ChatStatus.Closed || c.Status == ChatStatus.Archived))
+                        c.TempUserExpiry <= expiryDate)
             .ToListAsync();
     }
     public async Task<Chat?> GetActiveChatByUserIdAsync(Guid userId)
