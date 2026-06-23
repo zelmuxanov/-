@@ -208,13 +208,9 @@ public class AccountController : Controller
     {
         try
         {
-            Console.WriteLine("🔄 GET LOGOUT CALLED - User: " + User?.Identity?.Name);
-            
-            await _signInManager.SignOutAsync();
-            
-            Console.WriteLine("✅ GET LOGOUT COMPLETED - User signed out");
-            
-            // ✅ ДОБАВЛЯЕМ ЗАЩИТНЫЕ ЗАГОЛОВКИ
+            await _signInManager.SignOutAsync();   
+            _logger.LogInformation("Пользователь {Name} вышел из системы", User?.Identity?.Name);         
+            // ДОБАВЛЯЕМ ЗАЩИТНЫЕ ЗАГОЛОВКИ
             Response.Headers["Cache-Control"] = "no-cache, no-store";
             Response.Headers["Pragma"] = "no-cache";
             
@@ -222,7 +218,7 @@ public class AccountController : Controller
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"💥 GET LOGOUT ERROR: {ex.Message}");
+            _logger.LogError(ex, "Ошибка при выходе из системы");
             return RedirectToAction("Index", "Home");
         }
     }
