@@ -275,7 +275,7 @@ EnsureUploadDirectories(app.Environment.WebRootPath);
 var loggerStartup = app.Services.GetRequiredService<ILogger<Program>>();
 loggerStartup.LogInformation("🚀 Car Rental запущен!");
 loggerStartup.LogInformation("🌐 URL: {Urls}", string.Join(", ", app.Urls));
-loggerStartup.LogInformation("📧 SMTP настроен: {SmtpEnabled}", !string.IsNullOrEmpty(builder.Configuration["Email:Host"]));
+loggerStartup.LogInformation("📧 SMTP настроен: {SmtpEnabled}", !string.IsNullOrEmpty(builder.Configuration["EmailSettings:Host"]));
 loggerStartup.LogInformation("🤖 Telegram Bot: {TelegramEnabled}", builder.Configuration.GetValue<bool>("TelegramBot:Enabled", true));
 
 //app.Run();
