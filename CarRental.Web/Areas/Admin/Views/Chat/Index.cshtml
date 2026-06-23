@@ -26,7 +26,7 @@
                                 <div class="flex-grow-1" onclick="window.location.href='/Admin/Chat?chatId=@chat.Id'">
                                     <h6 class="mb-1">@chat.DisplayName</h6>
                                     <p class="mb-1 text-truncate">@chat.ContactInfo</p>
-                                    <small class="text-muted">@chat.LastMessageAt?.ToString("HH:mm")</small>
+                                    <small class="text-muted">@chat.LastMessageAt?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
                                 </div>
                                 <button class="btn btn-sm btn-link text-danger delete-chat-from-list" data-chat-id="@chat.Id" title="Удалить чат">
                                     <i class="fas fa-trash"></i>
@@ -83,7 +83,7 @@
                                     <div class="message-content p-2 rounded @(message.IsUserMessage ? "bg-light" : "bg-primary text-white")">
                                         <div class="d-flex justify-content-between">
                                             <strong>@message.SenderName</strong>
-                                            <small>@message.CreatedAt.ToString("HH:mm")</small>
+                                            <small>@message.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</small>
                                         </div>
                                         <div>@message.Message</div>
                                         @if (!string.IsNullOrEmpty(message.AttachmentUrl))

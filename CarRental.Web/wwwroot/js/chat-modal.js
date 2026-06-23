@@ -25,6 +25,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
 
+    function formatChatTime(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        if (msgDate.getTime() === today.getTime()) {
+            // Сегодня — только время
+            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            // Не сегодня — дата и время
+            return date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+
     function linkify(text) {
         if (!text) return text;
         const urlPattern = /(\b(https?:\/\/|www\.)[^\s]+)/gi;
@@ -105,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function addMessageToDOM(message) {
         if (!messagesContainer) return;
         const isUser = message.messageType === 1; // 1-User, 2-Admin, 3-System
-        const time = new Date(message.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const time = formatChatTime(msg.createdAt);
         
         let attachmentHtml = '';
         if (message.attachmentUrl) {
@@ -157,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '';
         messages.forEach(m => {
             const isUser = m.messageType === 1;
-            const time = new Date(m.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const time = formatChatTime(m.createdAt);
             let attachmentHtml = '';
             if (m.attachmentUrl) {
                 if (m.attachmentType && m.attachmentType.startsWith('image/')) {

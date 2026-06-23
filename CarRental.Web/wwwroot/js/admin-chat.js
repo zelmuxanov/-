@@ -122,6 +122,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function formatChatTime(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        
+        if (msgDate.getTime() === today.getTime()) {
+            // Сегодня — только время
+            return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        } else {
+            // Не сегодня — дата и время
+            return date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    }
+
     // Функция для преобразования ссылок в кликабельные
     function linkify(text) {
         if (!text) return text;
@@ -145,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let html = '';
         messages.forEach(msg => {
             const isUser = msg.messageType === 1; // User = 1
-            const time = new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            const time = formatChatTime(msg.createdAt);
 
             let messageHtml = `<div class="message mb-2 ${isUser ? 'user-message' : 'admin-message'}">
                         <div class="d-flex ${isUser ? 'justify-content-start' : 'justify-content-end'}">
