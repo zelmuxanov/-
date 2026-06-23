@@ -1,9 +1,22 @@
+# Build outputs
+**/bin/
+**/obj/
+**/publish/
+*.user
+*.suo
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# Sensitive configs
 appsettings.Development.json
 appsettings.Production.json
-*.user
 *.secret
 site-settings.json
 /wwwroot/site-settings.json
+
+# Uploads and temp
 /wwwroot/uploads/
 /wwwroot/temp/
 /wwwroot/templates/contract_template.docx
